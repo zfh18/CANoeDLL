@@ -588,7 +588,7 @@ static void EncodeName(CryptoPP::DERSequenceEncoder& out, const char* commonName
 }
 
 /**
- * @brief 使用 RSA2048 + PKCS#1 v1.5 生成自签名 X.509 证书（DER）。
+ * @brief 使用 RSA + PKCS#1 v1.5 生成自签名 X.509 证书（DER）。
  *
  * @param privateKeyHex       十六进制格式的私钥字符串（PKCS#8 DER）。
  * @param subjectCN           证书主题/签发者的 CN。
@@ -611,10 +611,6 @@ size_t CAPLEXPORT CAPLPASCAL GenerateX509Certificate(
         CryptoPP::RSA::PrivateKey privateKey;
         CryptoPP::StringSource ssPrivate(privateKeyHex, true, new CryptoPP::HexDecoder);
         privateKey.Load(ssPrivate);
-
-        if (privateKey.GetModulus().BitCount() != 2048) {
-            return 0;
-        }
 
         CryptoPP::RSA::PublicKey publicKey(privateKey);
         CryptoPP::AutoSeededRandomPool rng;
@@ -752,7 +748,7 @@ CAPL_DLL_INFO4 table[] = {
   {"dllRSASignMessage", (CAPL_FARCALL)RSASignMessage, "RSA", "Sign the message string with RSASSA-PSS using the specified hexadecimal private key.", 'L', 4, "CCBL", "\001\001\001\000", {"privateKeyHex","message","signature_out","signature_out_len"}},
   {"dllRSASignByteArray", (CAPL_FARCALL)RSASignByteArray, "RSA", "Sign a byte array using RSASSA-PSS with the specified hexadecimal private key.", 'L', 5, "CBLBL", "\001\001\000\001\000", {"privateKeyHex","message","messageLen","signature_out","signature_out_len"}},
   {"dllHash256", (CAPL_FARCALL)Hash256, "Algorithm", "Compute SHA-256 hash for a byte array.", 'L', 4, "BLBL", "\001\000\001\000", {"message","messageLen","hash_out","hash_out_len"}},
-  {"dllGenerateX509Certificate", (CAPL_FARCALL)GenerateX509Certificate, "RSA", "Generate a self-signed RSA2048 X.509 certificate (DER).", 'L', 5, "CCLBL", "\001\001\000\001\000", {"privateKeyHex","subjectCN","daysValid","cert_out","cert_out_len"}},
+  {"dllGenerateX509Certificate", (CAPL_FARCALL)GenerateX509Certificate, "RSA", "Generate a self-signed RSA X.509 certificate (DER).", 'L', 5, "CCLBL", "\001\001\000\001\000", {"privateKeyHex","subjectCN","daysValid","cert_out","cert_out_len"}},
   {"dllExtractPublicKeyParams", (CAPL_FARCALL)ExtractPublicKeyParams, "RSA", "extract public key parameters from a C-style private key string", 'L', 5, {'C','B','L'-128,'B','L'-128}, "\001\001\000\001\000", {"privateKeyHex","modulusBytes","modulusLength","publicExponentBytes","publicExponentLength"}},
   {0, 0}
 };
