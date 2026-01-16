@@ -99,11 +99,34 @@ if(MSVC)
       "/MAP"
     )
   endif()
+  target_compile_options(capldll PRIVATE "/utf-8")
   target_compile_definitions(capldll PRIVATE
     $<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=0>
     $<$<CONFIG:Debug>:_HAS_ITERATOR_DEBUGGING=0>
   )
 endif()
+
+add_executable(capldll_selftest
+  Tests/capldll_selftest.cpp
+  Sources/capldll.cpp
+)
+
+target_include_directories(capldll_selftest PRIVATE
+  ${PROJECT_SOURCE_DIR}/ExtInclude
+  ${PROJECT_SOURCE_DIR}/Includes
+)
+
+target_link_libraries(capldll_selftest PRIVATE
+  ${CRYPTLIB_PATH}
+)
+
+if(MSVC)
+  target_compile_options(capldll_selftest PRIVATE "/utf-8")
+endif()
+
+set_target_properties(capldll_selftest PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
 
 set_target_properties(capldll PROPERTIES
   OUTPUT_NAME "capldll"

@@ -38,14 +38,9 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <map>
-
-#include <iostream>
-#include <string>
-#include <stdexcept>
-#include <vector>
+#include <new>
+#include <ctime>
 
 #include "rsa.h"
 #include "osrng.h"
@@ -54,6 +49,8 @@
 #include "filters.h"
 #include "hex.h"
 #include "secblock.h"
+#include "queue.h"
+#include "oids.h"
 
 #if defined(_WIN64) || defined(__linux__)
   #define X64
@@ -68,9 +65,6 @@ typedef std::map<uint32_t, VIACapl*> VServiceMap;
 // ============================================================================
 // global variables
 // ============================================================================
-
-static uint32_t data = 0;
-static char dlldata[100];
 
 VCaplMap    gCaplMap;
 VServiceMap gServiceMap;
@@ -443,25 +437,18 @@ void ClearAll()
   gServiceMap.clear();
 }
 
-int32_t CAPLEXPORT CAPLPASCAL appAdd(int32_t x, int32_t y)
-{
-  int32_t z = x + y;
-
-  return z;
-}
-
 #define EightLongPars 'L','L','L','L','L','L','L','L'
 #define SixtyFourLongPars EightLongPars,EightLongPars,EightLongPars,EightLongPars,EightLongPars,EightLongPars,EightLongPars,EightLongPars
 
-// ----------------------- ÒÔÏÂÎªĞÂÔö¼Óº¯Êı ------------------------- //
+// ----------------------- ä»¥ä¸‹ä¸ºæ–°å¢åŠ å‡½æ•° ------------------------- //
 /**
- * @brief Ê¹ÓÃÖ¸¶¨µÄÊ®Áù½øÖÆË½Ô¿¶Ô C-·ç¸ñ×Ö·û´®½øĞĞ RSASSA-PSS Ç©Ãû¡£
+ * @brief ä½¿ç”¨æŒ‡å®šçš„åå…­è¿›åˆ¶ç§é’¥å¯¹ C-é£æ ¼å­—ç¬¦ä¸²è¿›è¡Œ RSASSA-PSS ç­¾åã€‚
  *
- * @param privateKeyHex       Ê®Áù½øÖÆ¸ñÊ½µÄË½Ô¿×Ö·û´®¡£
- * @param message             ÒªÇ©ÃûµÄ C-·ç¸ñ×Ö·û´®¡£
- * @param signature_out       ÓÃÓÚ´æ´¢Ç©Ãû½á¹ûµÄ×Ö½ÚÊı×é¡£
- * @param signature_out_len   Ç©ÃûÊı×éµÄ»º³åÇø´óĞ¡¡£
- * @return size_t             Ç©Ãû³É¹¦Ôò·µ»ØÊµ¼ÊÇ©Ãû³¤¶È£»Ê§°ÜÔò·µ»Ø0¡£
+ * @param privateKeyHex       åå…­è¿›åˆ¶æ ¼å¼çš„ç§é’¥å­—ç¬¦ä¸²ã€‚
+ * @param message             è¦ç­¾åçš„ C-é£æ ¼å­—ç¬¦ä¸²ã€‚
+ * @param signature_out       ç”¨äºå­˜å‚¨ç­¾åç»“æœçš„å­—èŠ‚æ•°ç»„ã€‚
+ * @param signature_out_len   ç­¾åæ•°ç»„çš„ç¼“å†²åŒºå¤§å°ã€‚
+ * @return size_t             ç­¾åæˆåŠŸåˆ™è¿”å›å®é™…ç­¾åé•¿åº¦ï¼›å¤±è´¥åˆ™è¿”å› 0ã€‚
  */
 size_t CAPLEXPORT CAPLPASCAL RSASignMessage(const char* privateKeyHex, const char* message, CryptoPP::byte* signature_out, size_t signature_out_len) {
     try {
@@ -469,11 +456,11 @@ size_t CAPLEXPORT CAPLPASCAL RSASignMessage(const char* privateKeyHex, const cha
         CryptoPP::StringSource ssPrivate(privateKeyHex, true, new CryptoPP::HexDecoder);
         privateKey.Load(ssPrivate);
 
-        // Ê¹ÓÃ RSASS<PSSR, SHA256> Ç©ÃûÆ÷
+        // ä½¿ç”¨ RSASS<PSSR, SHA256> ç­¾å
         CryptoPP::AutoSeededRandomPool rng;
         CryptoPP::RSASS<CryptoPP::PSSR, CryptoPP::SHA256>::Signer signer(privateKey);
 
-        // Ö±½Ó½«Ô­Ê¼ÏûÏ¢ºÍ³¤¶È´«µİ¸øÇ©Ãûº¯Êı£¬¿â»á×Ô¶¯½øĞĞ¹şÏ£
+        // ç›´æ¥å°†åŸå§‹æ¶ˆæ¯å’Œé•¿åº¦ä¼ é€’ç»™ç­¾åå‡½æ•°ï¼Œåº“ä¼šè‡ªåŠ¨è¿›è¡Œå“ˆå¸Œ
         CryptoPP::SecByteBlock signature(signer.MaxSignatureLength());
         size_t signed_len = signer.SignMessage(
             rng,
@@ -483,7 +470,6 @@ size_t CAPLEXPORT CAPLPASCAL RSASignMessage(const char* privateKeyHex, const cha
         );
 
         if (signature_out_len < signed_len) {
-            std::cerr << "´íÎó£ºÌá¹©µÄ»º³åÇøÌ«Ğ¡¡£ËùĞè´óĞ¡Îª: " << signed_len << " ×Ö½Ú¡£" << std::endl;
             return 0;
         }
 
@@ -491,21 +477,20 @@ size_t CAPLEXPORT CAPLPASCAL RSASignMessage(const char* privateKeyHex, const cha
         return signed_len;
 
     }
-    catch (const CryptoPP::Exception& e) {
-        std::cerr << "Crypto++ Ç©ÃûÒì³£: " << e.what() << std::endl;
+    catch (const CryptoPP::Exception&) {
         return 0;
     }
 }
 
 /**
- * @brief Ê¹ÓÃÖ¸¶¨µÄÊ®Áù½øÖÆË½Ô¿¶Ô×Ö½ÚÊı×é½øĞĞ RSASSA-PSS Ç©Ãû¡£
+ * @brief ä½¿ç”¨æŒ‡å®šçš„åå…­è¿›åˆ¶ç§é’¥å¯¹å­—èŠ‚æ•°ç»„è¿›è¡Œ RSASSA-PSS ç­¾åã€‚
  *
- * @param privateKeyHex       Ê®Áù½øÖÆ¸ñÊ½µÄË½Ô¿×Ö·û´®¡£
- * @param message             ÒªÇ©ÃûµÄ×Ö½ÚÊı×é¡£
- * @param messageLen          ÏûÏ¢µÄ³¤¶È¡£
- * @param signature_out       ÓÃÓÚ´æ´¢Ç©Ãû½á¹ûµÄ×Ö½ÚÊı×é¡£
- * @param signature_out_len   Ç©ÃûÊı×éµÄ»º³åÇø´óĞ¡¡£
- * @return size_t             Ç©Ãû³É¹¦Ôò·µ»ØÊµ¼ÊÇ©Ãû³¤¶È£»Ê§°ÜÔò·µ»Ø0¡£
+ * @param privateKeyHex       åå…­è¿›åˆ¶æ ¼å¼çš„ç§é’¥å­—ç¬¦ä¸²ã€‚
+ * @param message             è¦ç­¾åçš„å­—èŠ‚æ•°ç»„ã€‚
+ * @param messageLen          æ¶ˆæ¯çš„é•¿åº¦ã€‚
+ * @param signature_out       ç”¨äºå­˜å‚¨ç­¾åç»“æœçš„å­—èŠ‚æ•°ç»„ã€‚
+ * @param signature_out_len   ç­¾åæ•°ç»„çš„ç¼“å†²åŒºå¤§å°ã€‚
+ * @return size_t             ç­¾åæˆåŠŸåˆ™è¿”å›å®é™…ç­¾åé•¿åº¦ï¼›å¤±è´¥åˆ™è¿”å› 0ã€‚
  */
 size_t CAPLEXPORT CAPLPASCAL RSASignByteArray(const char* privateKeyHex, const CryptoPP::byte* message, size_t messageLen, CryptoPP::byte* signature_out, size_t signature_out_len) {
     try {
@@ -516,7 +501,7 @@ size_t CAPLEXPORT CAPLPASCAL RSASignByteArray(const char* privateKeyHex, const C
         CryptoPP::AutoSeededRandomPool rng;
         CryptoPP::RSASS<CryptoPP::PSSR, CryptoPP::SHA256>::Signer signer(privateKey);
 
-        // Ö±½Ó½«Ô­Ê¼ÏûÏ¢ºÍ³¤¶È´«µİ¸øÇ©Ãûº¯Êı£¬¿â»á×Ô¶¯½øĞĞ¹şÏ£
+        // ç›´æ¥å°†åŸå§‹æ¶ˆæ¯å’Œé•¿åº¦ä¼ é€’ç»™ç­¾åå‡½æ•°ï¼Œåº“ä¼šè‡ªåŠ¨è¿›è¡Œå“ˆå¸Œ
         CryptoPP::SecByteBlock signature(signer.MaxSignatureLength());
         size_t signed_len = signer.SignMessage(
             rng,
@@ -526,7 +511,6 @@ size_t CAPLEXPORT CAPLPASCAL RSASignByteArray(const char* privateKeyHex, const C
         );
 
         if (signature_out_len < signed_len) {
-            std::cerr << "´íÎó£ºÌá¹©µÄ»º³åÇøÌ«Ğ¡¡£ËùĞè´óĞ¡Îª: " << signed_len << " ×Ö½Ú¡£" << std::endl;
             return 0;
         }
 
@@ -534,14 +518,193 @@ size_t CAPLEXPORT CAPLPASCAL RSASignByteArray(const char* privateKeyHex, const C
         return signed_len;
 
     }
-    catch (const CryptoPP::Exception& e) {
-        std::cerr << "Crypto++ Ç©ÃûÒì³£: " << e.what() << std::endl;
+    catch (const CryptoPP::Exception&) {
         return 0;
     }
 }
 
-// ÌáÈ¡¹«Ô¿²ÎÊıµÄº¯Êı
-// Èç¹û³É¹¦£¬·µ»ØÒ»¸ö·ÇÁãÖµ£»Èç¹ûÊ§°Ü£¬·µ»Ø 0¡£
+/**
+ * @brief è®¡ç®—è¾“å…¥æ•°æ®çš„ SHA-256 å“ˆå¸Œå€¼ã€‚
+ *
+ * @param message             è¾“å…¥çš„å­—èŠ‚æ•°ç»„ã€‚
+ * @param messageLen          è¾“å…¥æ•°æ®é•¿åº¦ã€‚
+ * @param hash_out            è¾“å‡ºå“ˆå¸Œç»“æœçš„å­—èŠ‚æ•°ç»„ï¼ˆ32 å­—èŠ‚ï¼‰ã€‚
+ * @param hash_out_len        è¾“å‡ºç¼“å†²åŒºå¤§å°ã€‚
+ * @return size_t             æˆåŠŸè¿”å› 32ï¼›å¤±è´¥è¿”å› 0ã€‚
+ */
+size_t CAPLEXPORT CAPLPASCAL Hash256(
+    const CryptoPP::byte* message,
+    size_t messageLen,
+    CryptoPP::byte* hash_out,
+    size_t hash_out_len) {
+    if ((message == nullptr && messageLen > 0) || hash_out == nullptr) {
+        return 0;
+    }
+    if (hash_out_len < CryptoPP::SHA256::DIGESTSIZE) {
+        return 0;
+    }
+
+    CryptoPP::SHA256 hash;
+    hash.Update(message, messageLen);
+    hash.Final(hash_out);
+    return CryptoPP::SHA256::DIGESTSIZE;
+}
+
+static bool BuildUtcTimeString(std::time_t timeValue, CryptoPP::SecByteBlock& out) {
+    std::tm tmUtc;
+    if (gmtime_s(&tmUtc, &timeValue) != 0) {
+        return false;
+    }
+
+    char buffer[16] = {0};
+    if (std::strftime(buffer, sizeof(buffer), "%y%m%d%H%M%SZ", &tmUtc) == 0) {
+        return false;
+    }
+
+    out.Assign(reinterpret_cast<const CryptoPP::byte*>(buffer), std::strlen(buffer));
+    return true;
+}
+
+static void EncodeName(CryptoPP::DERSequenceEncoder& out, const char* commonName) {
+    CryptoPP::DERSequenceEncoder rdnSeq(out);
+    CryptoPP::DERSetEncoder rdnSet(rdnSeq);
+    CryptoPP::DERSequenceEncoder atv(rdnSet);
+
+    CryptoPP::OID cnOid(2);
+    cnOid += 5;
+    cnOid += 4;
+    cnOid += 3;
+    cnOid.DEREncode(atv);
+
+    CryptoPP::DEREncodeTextString(
+        atv,
+        reinterpret_cast<const CryptoPP::byte*>(commonName),
+        std::strlen(commonName),
+        CryptoPP::UTF8_STRING);
+
+    atv.MessageEnd();
+    rdnSet.MessageEnd();
+    rdnSeq.MessageEnd();
+}
+
+/**
+ * @brief ä½¿ç”¨ RSA2048 + PKCS#1 v1.5 ç”Ÿæˆè‡ªç­¾å X.509 è¯ä¹¦ï¼ˆDERï¼‰ã€‚
+ *
+ * @param privateKeyHex       åå…­è¿›åˆ¶æ ¼å¼çš„ç§é’¥å­—ç¬¦ä¸²ï¼ˆPKCS#8 DERï¼‰ã€‚
+ * @param subjectCN           è¯ä¹¦ä¸»é¢˜/ç­¾å‘è€…çš„ CNã€‚
+ * @param daysValid           æœ‰æ•ˆæœŸå¤©æ•°ï¼ˆ0 è¡¨ç¤º 365 å¤©ï¼‰ã€‚
+ * @param cert_out            è¾“å‡ºè¯ä¹¦ DER çš„ç¼“å†²åŒºã€‚
+ * @param cert_out_len        è¾“å‡ºç¼“å†²åŒºå¤§å°ã€‚
+ * @return size_t             æˆåŠŸè¿”å›è¯ä¹¦å­—èŠ‚æ•°ï¼›å¤±è´¥è¿”å› 0ã€‚
+ */
+size_t CAPLEXPORT CAPLPASCAL GenerateX509Certificate(
+    const char* privateKeyHex,
+    const char* subjectCN,
+    uint32_t daysValid,
+    CryptoPP::byte* cert_out,
+    size_t cert_out_len) {
+    if (privateKeyHex == nullptr || subjectCN == nullptr || cert_out == nullptr) {
+        return 0;
+    }
+
+    try {
+        CryptoPP::RSA::PrivateKey privateKey;
+        CryptoPP::StringSource ssPrivate(privateKeyHex, true, new CryptoPP::HexDecoder);
+        privateKey.Load(ssPrivate);
+
+        if (privateKey.GetModulus().BitCount() != 2048) {
+            return 0;
+        }
+
+        CryptoPP::RSA::PublicKey publicKey(privateKey);
+        CryptoPP::AutoSeededRandomPool rng;
+
+        CryptoPP::ByteQueue tbsQueue;
+        {
+            CryptoPP::DERSequenceEncoder tbsSeq(tbsQueue);
+
+            CryptoPP::DERGeneralEncoder version(tbsSeq, CryptoPP::CONTEXT_SPECIFIC | CryptoPP::CONSTRUCTED | 0);
+            CryptoPP::DEREncodeUnsigned(version, 2);
+            version.MessageEnd();
+
+            CryptoPP::DEREncodeUnsigned(tbsSeq, 1U);
+
+            CryptoPP::DERSequenceEncoder sigAlg(tbsSeq);
+            CryptoPP::ASN1::sha256WithRSAEncryption().DEREncode(sigAlg);
+            CryptoPP::DEREncodeNull(sigAlg);
+            sigAlg.MessageEnd();
+
+            EncodeName(tbsSeq, subjectCN);
+
+            const uint32_t effectiveDays = (daysValid == 0) ? 365U : daysValid;
+            const std::time_t now = std::time(nullptr);
+            const std::time_t notAfter = now + static_cast<std::time_t>(effectiveDays) * 24 * 60 * 60;
+
+            CryptoPP::SecByteBlock notBeforeStr;
+            CryptoPP::SecByteBlock notAfterStr;
+            if (!BuildUtcTimeString(now, notBeforeStr) || !BuildUtcTimeString(notAfter, notAfterStr)) {
+                return 0;
+            }
+
+            CryptoPP::DERSequenceEncoder validity(tbsSeq);
+            CryptoPP::DEREncodeDate(validity, notBeforeStr, CryptoPP::UTC_TIME);
+            CryptoPP::DEREncodeDate(validity, notAfterStr, CryptoPP::UTC_TIME);
+            validity.MessageEnd();
+
+            EncodeName(tbsSeq, subjectCN);
+            publicKey.Save(tbsSeq);
+
+            tbsSeq.MessageEnd();
+        }
+
+        CryptoPP::SecByteBlock tbsData(tbsQueue.CurrentSize());
+        tbsQueue.Get(tbsData, tbsData.size());
+
+        CryptoPP::RSASS<CryptoPP::PKCS1v15, CryptoPP::SHA256>::Signer signer(privateKey);
+        CryptoPP::SecByteBlock signature(signer.MaxSignatureLength());
+        size_t sigLen = signer.SignMessage(rng, tbsData, tbsData.size(), signature);
+
+        CryptoPP::ByteQueue certQueue;
+        {
+            CryptoPP::DERSequenceEncoder certSeq(certQueue);
+            certSeq.Put(tbsData, tbsData.size());
+
+            CryptoPP::DERSequenceEncoder sigAlg(certSeq);
+            CryptoPP::ASN1::sha256WithRSAEncryption().DEREncode(sigAlg);
+            CryptoPP::DEREncodeNull(sigAlg);
+            sigAlg.MessageEnd();
+
+            CryptoPP::DEREncodeBitString(certSeq, signature.data(), sigLen, 0);
+            certSeq.MessageEnd();
+        }
+
+        const size_t certLen = certQueue.CurrentSize();
+        if (cert_out_len < certLen) {
+            return 0;
+        }
+
+        certQueue.Get(cert_out, certLen);
+        return certLen;
+    }
+    catch (const CryptoPP::Exception&) {
+        return 0;
+    }
+}
+
+/**
+ * @brief ä»ç§é’¥ä¸­æå– RSA å…¬é’¥å‚æ•°ï¼ˆæ¨¡æ•° n ä¸å…¬é’¥æŒ‡æ•° eï¼‰ã€‚
+ *
+ * è¾“å…¥çš„ç§é’¥ä¸º PKCS#8 DER åå…­è¿›åˆ¶å­—ç¬¦ä¸²ã€‚å‡½æ•°ä¼šè§£æç§é’¥å¹¶è¾“å‡ºï¼š
+ * - modulusBytesï¼šæ¨¡æ•° n çš„å¤§ç«¯å­—èŠ‚åº
+ * - publicExponentBytesï¼šå…¬é’¥æŒ‡æ•° e çš„å¤§ç«¯å­—èŠ‚åº
+ *
+ * @param privateKeyHex            åå…­è¿›åˆ¶æ ¼å¼çš„ç§é’¥å­—ç¬¦ä¸²ï¼ˆPKCS#8 DERï¼‰ã€‚
+ * @param modulusBytes             è¾“å‡ºæ¨¡æ•° n çš„ç¼“å†²åŒºã€‚
+ * @param modulusLength            è¾“å…¥ä¸ºç¼“å†²åŒºå¤§å°ï¼Œè¾“å‡ºä¸ºå®é™…é•¿åº¦ã€‚
+ * @param publicExponentBytes      è¾“å‡ºå…¬é’¥æŒ‡æ•° e çš„ç¼“å†²åŒºã€‚
+ * @param publicExponentLength     è¾“å…¥ä¸ºç¼“å†²åŒºå¤§å°ï¼Œè¾“å‡ºä¸ºå®é™…é•¿åº¦ã€‚
+ * @return size_t                  æˆåŠŸè¿”å› 1ï¼›å¤±è´¥è¿”å› 0ã€‚
+ */
 size_t CAPLEXPORT CAPLPASCAL ExtractPublicKeyParams(
     const char* privateKeyHex,
     byte* modulusBytes,
@@ -559,22 +722,21 @@ size_t CAPLEXPORT CAPLPASCAL ExtractPublicKeyParams(
         CryptoPP::Integer modulus = privateKey.GetModulus();
         CryptoPP::Integer publicExponent = privateKey.GetPublicExponent();
 
-        // ½«³¤¶È¸³¸øÒıÓÃ²ÎÊı
+        // å°†é•¿åº¦èµ‹ç»™å¼•ç”¨å‚æ•°
         modulusLength = modulus.MinEncodedSize();
         publicExponentLength = publicExponent.MinEncodedSize();
 
-        // ±àÂëÊı¾İµ½µ÷ÓÃÕßÌá¹©µÄ»º³åÇøÖĞ
+        // ç¼–ç æ•°æ®åˆ°è°ƒç”¨è€…æä¾›çš„ç¼“å†²åŒºä¸­
         modulus.Encode(modulusBytes, modulusLength);
         publicExponent.Encode(publicExponentBytes, publicExponentLength);
 
-        return 1; // ³É¹¦Ê±·µ»Ø·ÇÁãÖµ
+        return 1; // æˆåŠŸæ—¶è¿”å›éé›¶å€¼
     }
-    catch (const CryptoPP::Exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        // Ê§°ÜÊ±£¬½«³¤¶ÈÉèÖÃÎª 0
+    catch (const CryptoPP::Exception&) {
+        // å¤±è´¥æ—¶ï¼Œå°†é•¿åº¦è®¾ç½®ä¸º 0
         modulusLength = 0;
         publicExponentLength = 0;
-        return 0; // Ê§°ÜÊ±·µ»Ø 0
+        return 0; // å¤±è´¥æ—¶è¿”å› 0
     }
 }
 
@@ -587,10 +749,11 @@ size_t CAPLEXPORT CAPLPASCAL ExtractPublicKeyParams(
 CAPL_DLL_INFO4 table[] = {
 {CDLL_VERSION_NAME, (CAPL_FARCALL)CDLL_VERSION, "", "", CAPL_DLL_CDECL, 0xabcd, CDLL_EXPORT },
 
-  {"dllAdd", (CAPL_FARCALL)appAdd, "CAPL_DLL", "This function will add two values. The return value is the result", 'L', 2, "LL", "", {"x","y"}},
-  {"dllRSASignMessage", (CAPL_FARCALL)RSASignMessage, "CAPL_DLL", "Sign the message string with RSASSA-PSS using the specified hexadecimal private key.", 'L', 4, "CCBL", "\001\001\001\000", {"privateKeyHex","message","signature_out","signature_out_len"}},
-  {"dllRSASignByteArray", (CAPL_FARCALL)RSASignByteArray, "CAPL_DLL", "Sign a byte array using RSASSA-PSS with the specified hexadecimal private key.", 'L', 5, "CBLBL", "\001\001\000\001\000", {"privateKeyHex","message","messageLen","signature_out","signature_out_len"}},
-  {"dllExtractPublicKeyParams", (CAPL_FARCALL)ExtractPublicKeyParams, "CAPL_DLL", "extract public key parameters from a C-style private key string", 'L', 5, {'C','B','L'-128,'B','L'-128}, "\001\001\000\001\000", {"privateKeyHex","modulusBytes","modulusLength","publicExponentBytes","publicExponentLength"}},
+  {"dllRSASignMessage", (CAPL_FARCALL)RSASignMessage, "RSA", "Sign the message string with RSASSA-PSS using the specified hexadecimal private key.", 'L', 4, "CCBL", "\001\001\001\000", {"privateKeyHex","message","signature_out","signature_out_len"}},
+  {"dllRSASignByteArray", (CAPL_FARCALL)RSASignByteArray, "RSA", "Sign a byte array using RSASSA-PSS with the specified hexadecimal private key.", 'L', 5, "CBLBL", "\001\001\000\001\000", {"privateKeyHex","message","messageLen","signature_out","signature_out_len"}},
+  {"dllHash256", (CAPL_FARCALL)Hash256, "Algorithm", "Compute SHA-256 hash for a byte array.", 'L', 4, "BLBL", "\001\000\001\000", {"message","messageLen","hash_out","hash_out_len"}},
+  {"dllGenerateX509Certificate", (CAPL_FARCALL)GenerateX509Certificate, "RSA", "Generate a self-signed RSA2048 X.509 certificate (DER).", 'L', 5, "CCLBL", "\001\001\000\001\000", {"privateKeyHex","subjectCN","daysValid","cert_out","cert_out_len"}},
+  {"dllExtractPublicKeyParams", (CAPL_FARCALL)ExtractPublicKeyParams, "RSA", "extract public key parameters from a C-style private key string", 'L', 5, {'C','B','L'-128,'B','L'-128}, "\001\001\000\001\000", {"privateKeyHex","modulusBytes","modulusLength","publicExponentBytes","publicExponentLength"}},
   {0, 0}
 };
 CAPLEXPORT CAPL_DLL_INFO4* caplDllTable4 = table;
