@@ -1,0 +1,39 @@
+{
+  "version": 4,
+  "configurePresets": [
+    {
+      "name": "x86",
+      "displayName": "x86 (Win32)",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build/x86",
+      "architecture": "Win32",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Release"
+      }
+    },
+    {
+      "name": "x64",
+      "displayName": "x64",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build/x64",
+      "architecture": "x64",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "x86-release",
+      "displayName": "Release | x86 (Win32)",
+      "configurePreset": "x86",
+      "configuration": "Release"
+    },
+    {
+      "name": "x64-release",
+      "displayName": "Release | x64",
+      "configurePreset": "x64",
+      "configuration": "Release"
+    }
+  ]
+}

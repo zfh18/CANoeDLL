@@ -1,0 +1,45 @@
+# Build output
+build/
+out/
+cmake-build-*/
+
+# CMake generated
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+CMakeUserPresets.json
+
+# Visual Studio / MSBuild
+.vs/
+*.suo
+*.user
+*.vcxproj.user
+*.VC.db
+*.VC.VC.opendb
+*.ipch
+*.opendb
+*.sdf
+*.opensdf
+*.tlog
+*.lastbuildstate
+*.log
+
+# Binaries / intermediates
+*.obj
+*.o
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.idb
+*.pch
+*.dll
+*.exe
+*.map
+
+# Windows noise
+Thumbs.db
+Desktop.ini
+
