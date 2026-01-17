@@ -17,13 +17,13 @@
 #include "../ExtInclude/secblock.h"
 #include "../ExtInclude/integer.h"
 
-size_t CAPLEXPORT CAPLPASCAL RSASignMessage(
+size_t CAPLEXPORT CAPLPASCAL RSASignMessagePSS(
   const char* privateKeyHex,
   const char* message,
   CryptoPP::byte* signature_out,
   size_t signature_out_len);
 
-size_t CAPLEXPORT CAPLPASCAL RSASignByteArray(
+size_t CAPLEXPORT CAPLPASCAL RSASignByteArrayPSS(
   const char* privateKeyHex,
   const CryptoPP::byte* message,
   size_t messageLen,
@@ -71,22 +71,22 @@ int main() {
     const char* message = "capldll-selftest";
     std::vector<CryptoPP::byte> signature(512);
 
-    size_t sigLen = RSASignMessage(
+    size_t sigLen = RSASignMessagePSS(
       privateKeyHex.c_str(),
       message,
       signature.data(),
       signature.size());
 
     if (sigLen == 0) {
-      std::cerr << "RSASignMessage failed." << std::endl;
+      std::cerr << "RSASignMessagePSS failed." << std::endl;
       return 1;
     }
 
-    std::cout << "RSASignMessage signature(hex): "
+    std::cout << "RSASignMessagePSS signature(hex): "
               << ToHex(signature.data(), sigLen) << std::endl;
 
     const CryptoPP::byte messageBytes[] = {0x10, 0x20, 0x30, 0x40, 0x50};
-    sigLen = RSASignByteArray(
+    sigLen = RSASignByteArrayPSS(
       privateKeyHex.c_str(),
       messageBytes,
       sizeof(messageBytes),
@@ -94,11 +94,11 @@ int main() {
       signature.size());
 
     if (sigLen == 0) {
-      std::cerr << "RSASignByteArray failed." << std::endl;
+      std::cerr << "RSASignByteArrayPSS failed." << std::endl;
       return 1;
     }
 
-    std::cout << "RSASignByteArray signature(hex): "
+    std::cout << "RSASignByteArrayPSS signature(hex): "
               << ToHex(signature.data(), sigLen) << std::endl;
 
     std::vector<CryptoPP::byte> modulus(512);

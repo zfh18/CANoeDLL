@@ -34,6 +34,14 @@
   - x86：`build/x86/bin/Release/capldll.map`
   - x64：`build/x64/bin/Release/capldll.map`
 
+## 导出函数（节选）
+
+- `dllRSASignMessagePSS` / `dllRSASignByteArrayPSS`：RSA PSS 签名
+- `dllRSASignMessagePKCS1` / `dllRSASignByteArrayPKCS1`：RSA PKCS#1 v1.5 签名
+- `dllHash256`：SHA-256 哈希
+- `dllGenerateX509Certificate`：自签名 X.509 证书（DER）
+- `dllExtractPublicKeyParams`：提取 RSA 公钥参数
+
 ## 常见问题
 
 ### 1) LNK2038：_ITERATOR_DEBUG_LEVEL / RuntimeLibrary 不匹配
