@@ -6,7 +6,7 @@
 
 以下目录必须保留在 `CANoeDLL` 根目录：
 
-- `Sources/`：DLL 源码与导出定义文件
+- `Sources/`：DLL 源码与导出定义文件（主文件 `crypto_canoedll.cpp`）
 - `Includes/`：CANoe 接口头文件
 - `ExtInclude/`：Crypto++ 头文件
 - `ExtLib/`：Crypto++ 静态库（`cryptlib32.lib` / `cryptlib64.lib`）
@@ -18,28 +18,34 @@
 
 ## 构建方式（Cursor）
 
-1. 状态栏选择 **Configure Preset**：
+> 当前状态栏不显示 Configure Preset，请使用命令面板切换配置。
+
+1. 命令面板 `CMake: Select Configure Preset`：
    - `x86 (Win32)` 或 `x64`
-2. 状态栏选择 **Build Preset**：
+2. 命令面板 `CMake: Configure`
+3. 命令面板 `CMake: Select Build Preset`：
    - `Release | x86 (Win32)` 或 `Release | x64`
-3. 点击 **Build**
+4. 命令面板 `CMake: Build`
 
 > 构建时会生成 `.map` 文件，便于查看链接内容。
 
 ## 输出文件
 
-- x86：`build/x86/bin/Release/capldll.dll`
-- x64：`build/x64/bin/Release/capldll.dll`
+- x86：`build/x86/bin/Release/crypto_canoedll.dll`
+- x64：`build/x64/bin/Release/crypto_canoedll.dll`
+- 自测程序：
+  - x86：`build/x86/bin/Release/capldll_selftest.exe`
+  - x64：`build/x64/bin/Release/capldll_selftest.exe`
 - Map 文件：
-  - x86：`build/x86/bin/Release/capldll.map`
-  - x64：`build/x64/bin/Release/capldll.map`
+  - x86：`build/x86/bin/Release/crypto_canoedll.map`
+  - x64：`build/x64/bin/Release/crypto_canoedll.map`
 
 ## 导出函数（节选）
 
 - `dllRSASignMessagePSS` / `dllRSASignByteArrayPSS`：RSA PSS 签名
 - `dllRSASignMessagePKCS1` / `dllRSASignByteArrayPKCS1`：RSA PKCS#1 v1.5 签名
 - `dllHash256`：SHA-256 哈希
-- `dllGenerateX509Certificate`：自签名 X.509 证书（DER）
+- `dllGenerateX509Certificate`：自签名 X.509 证书（DER，RSA 任意位数）
 - `dllExtractPublicKeyParams`：提取 RSA 公钥参数
 
 ## 常见问题
