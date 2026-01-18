@@ -72,10 +72,12 @@ if(NOT EXISTS "${ROOT_EXTLIB_DIR}/cryptlib64.lib")
 endif()
 
 add_library(cryptodll SHARED
+  Sources/capl_common.cpp
   Sources/cryptodll.cpp
 )
 
 add_library(parseflashfile SHARED
+  Sources/capl_common.cpp
   Sources/parseflashfile.cpp
 )
 
