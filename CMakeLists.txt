@@ -16,15 +16,15 @@ set(ROOT_INC_DIR "${PROJECT_SOURCE_DIR}/Includes")
 set(ROOT_EXTINC_DIR "${PROJECT_SOURCE_DIR}/ExtInclude")
 set(ROOT_EXTLIB_DIR "${PROJECT_SOURCE_DIR}/ExtLib")
 
-if(NOT EXISTS "${ROOT_SRC_DIR}/crypto_canoedll.cpp")
+if(NOT EXISTS "${ROOT_SRC_DIR}/cryptodll.cpp")
   if(EXISTS "${DEMO_DIR}/Sources/capldll.cpp")
     file(MAKE_DIRECTORY "${ROOT_SRC_DIR}")
     file(COPY "${DEMO_DIR}/Sources/capldll.cpp" DESTINATION "${ROOT_SRC_DIR}")
     file(RENAME
       "${ROOT_SRC_DIR}/capldll.cpp"
-      "${ROOT_SRC_DIR}/crypto_canoedll.cpp")
+      "${ROOT_SRC_DIR}/cryptodll.cpp")
   else()
-    message(FATAL_ERROR "Missing Sources/crypto_canoedll.cpp. Copy from Demo/Sources first.")
+    message(FATAL_ERROR "Missing Sources/cryptodll.cpp. Copy from Demo/Sources first.")
   endif()
 endif()
 
@@ -72,7 +72,7 @@ if(NOT EXISTS "${ROOT_EXTLIB_DIR}/cryptlib64.lib")
 endif()
 
 add_library(capldll SHARED
-  Sources/crypto_canoedll.cpp
+  Sources/cryptodll.cpp
 )
 
 target_include_directories(capldll PRIVATE
@@ -111,7 +111,7 @@ endif()
 
 add_executable(capldll_selftest
   Tests/capldll_selftest.cpp
-  Sources/crypto_canoedll.cpp
+  Sources/cryptodll.cpp
 )
 
 target_include_directories(capldll_selftest PRIVATE
@@ -132,7 +132,7 @@ set_target_properties(capldll_selftest PROPERTIES
 )
 
 set_target_properties(capldll PROPERTIES
-  OUTPUT_NAME "crypto_canoedll"
+  OUTPUT_NAME "cryptodll"
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
   ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"

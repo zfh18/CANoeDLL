@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------------
 |
-| File Name: crypto_canoedll.cpp
+| File Name: cryptodll.cpp
 |
 |            Example of a capl DLL implementation module and using CAPLLbacks.
 |-----------------------------------------------------------------------------

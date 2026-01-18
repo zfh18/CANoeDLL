@@ -6,7 +6,7 @@
 
 以下目录必须保留在 `CANoeDLL` 根目录：
 
-- `Sources/`：DLL 源码与导出定义文件（主文件 `crypto_canoedll.cpp`）
+- `Sources/`：DLL 源码与导出定义文件（主文件 `cryptodll.cpp`）
 - `Includes/`：CANoe 接口头文件
 - `ExtInclude/`：Crypto++ 头文件
 - `ExtLib/`：Crypto++ 静态库（`cryptlib32.lib` / `cryptlib64.lib`）
@@ -31,14 +31,14 @@
 
 ## 输出文件
 
-- x86：`build/x86/bin/Release/crypto_canoedll.dll`
-- x64：`build/x64/bin/Release/crypto_canoedll.dll`
+- x86：`build/x86/bin/Release/cryptodll.dll`
+- x64：`build/x64/bin/Release/cryptodll.dll`
 - 自测程序：
   - x86：`build/x86/bin/Release/capldll_selftest.exe`
   - x64：`build/x64/bin/Release/capldll_selftest.exe`
 - Map 文件：
-  - x86：`build/x86/bin/Release/crypto_canoedll.map`
-  - x64：`build/x64/bin/Release/crypto_canoedll.map`
+  - x86：`build/x86/bin/Release/cryptodll.map`
+  - x64：`build/x64/bin/Release/cryptodll.map`
 
 ## 导出函数（节选）
 
