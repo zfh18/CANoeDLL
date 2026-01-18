@@ -23,22 +23,30 @@
 1. 命令面板 `CMake: Select Configure Preset`：
    - `x86 (Win32)` 或 `x64`
 2. 命令面板 `CMake: Configure`
-3. 命令面板 `CMake: Select Build Preset`：
+3. 命令面板 `CMake: Set Build Target`：
+   - `cryptodll` 或 `parseflashfile`
+4. 命令面板 `CMake: Select Build Preset`：
    - `Release | x86 (Win32)` 或 `Release | x64`
-4. 命令面板 `CMake: Build`
+5. 命令面板 `CMake: Build`
 
 > 构建时会生成 `.map` 文件，便于查看链接内容。
 
 ## 输出文件
 
-- x86：`build/x86/bin/Release/cryptodll.dll`
-- x64：`build/x64/bin/Release/cryptodll.dll`
+- `cryptodll`：
+  - x86：`build/x86/bin/Release/cryptodll.dll`
+  - x64：`build/x64/bin/Release/cryptodll.dll`
+- `parseflashfile`：
+  - x86：`build/x86/bin/Release/parseflashfile.dll`
+  - x64：`build/x64/bin/Release/parseflashfile.dll`
 - 自测程序：
-  - x86：`build/x86/bin/Release/capldll_selftest.exe`
-  - x64：`build/x64/bin/Release/capldll_selftest.exe`
+  - x86：`build/x86/bin/Release/cryptodll_selftest.exe`
+  - x64：`build/x64/bin/Release/cryptodll_selftest.exe`
 - Map 文件：
   - x86：`build/x86/bin/Release/cryptodll.map`
   - x64：`build/x64/bin/Release/cryptodll.map`
+  - x86：`build/x86/bin/Release/parseflashfile.map`
+  - x64：`build/x64/bin/Release/parseflashfile.map`
 
 ## 导出函数（节选）
 
@@ -47,6 +55,9 @@
 - `dllHash256`：SHA-256 哈希
 - `dllGenerateX509Certificate`：自签名 X.509 证书（DER，RSA 任意位数）
 - `dllExtractPublicKeyParams`：提取 RSA 公钥参数
+- `dllparseFile`：解析 HEX/S19/BIN 文件（返回类型）
+- `dllgetBlockCount` / `dllgetBlockStartAddress` / `dllgetBlockDataLength` / `dllgetBlockData`：获取解析后的数据块信息
+- `dllgetLastErrorMessage`：获取上一次解析错误信息（参数为 `message_out` 和 `maxLength`）
 
 ## 常见问题
 

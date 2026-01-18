@@ -71,13 +71,12 @@ if(NOT EXISTS "${ROOT_EXTLIB_DIR}/cryptlib64.lib")
   endif()
 endif()
 
-add_library(capldll SHARED
+add_library(cryptodll SHARED
   Sources/cryptodll.cpp
 )
 
-target_include_directories(capldll PRIVATE
-  ${PROJECT_SOURCE_DIR}/ExtInclude
-  ${PROJECT_SOURCE_DIR}/Includes
+add_library(parseflashfile SHARED
+  Sources/parseflashfile.cpp
 )
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -86,53 +85,65 @@ else()
   set(CRYPTLIB_PATH "${PROJECT_SOURCE_DIR}/ExtLib/cryptlib32.lib")
 endif()
 
-target_link_libraries(capldll PRIVATE
-  ${CRYPTLIB_PATH}
-)
+foreach(target_name IN ITEMS cryptodll parseflashfile)
+  target_include_directories(${target_name} PRIVATE
+    ${PROJECT_SOURCE_DIR}/ExtInclude
+    ${PROJECT_SOURCE_DIR}/Includes
+  )
 
-if(MSVC)
-  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    target_link_options(capldll PRIVATE
-      "/DEF:${PROJECT_SOURCE_DIR}/Sources/capldll_x64.def"
-      "/MAP"
-    )
-  else()
-    target_link_options(capldll PRIVATE
-      "/DEF:${PROJECT_SOURCE_DIR}/Sources/capldll.def"
-      "/MAP"
+  target_link_libraries(${target_name} PRIVATE
+    ${CRYPTLIB_PATH}
+  )
+
+  if(MSVC)
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+      target_link_options(${target_name} PRIVATE
+        "/DEF:${PROJECT_SOURCE_DIR}/Sources/capldll_x64.def"
+        "/MAP"
+      )
+    else()
+      target_link_options(${target_name} PRIVATE
+        "/DEF:${PROJECT_SOURCE_DIR}/Sources/capldll.def"
+        "/MAP"
+      )
+    endif()
+    target_compile_definitions(${target_name} PRIVATE
+      $<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=0>
+      $<$<CONFIG:Debug>:_HAS_ITERATOR_DEBUGGING=0>
     )
   endif()
-  target_compile_options(capldll PRIVATE "/utf-8")
-  target_compile_definitions(capldll PRIVATE
-    $<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=0>
-    $<$<CONFIG:Debug>:_HAS_ITERATOR_DEBUGGING=0>
-  )
-endif()
+endforeach()
 
-add_executable(capldll_selftest
+add_executable(cryptodll_selftest
   Tests/capldll_selftest.cpp
   Sources/cryptodll.cpp
 )
 
-target_include_directories(capldll_selftest PRIVATE
+target_include_directories(cryptodll_selftest PRIVATE
   ${PROJECT_SOURCE_DIR}/ExtInclude
   ${PROJECT_SOURCE_DIR}/Includes
 )
 
-target_link_libraries(capldll_selftest PRIVATE
+target_link_libraries(cryptodll_selftest PRIVATE
   ${CRYPTLIB_PATH}
 )
 
 if(MSVC)
-  target_compile_options(capldll_selftest PRIVATE "/utf-8")
 endif()
 
-set_target_properties(capldll_selftest PROPERTIES
+set_target_properties(cryptodll_selftest PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
-set_target_properties(capldll PROPERTIES
+set_target_properties(cryptodll PROPERTIES
   OUTPUT_NAME "cryptodll"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+)
+
+set_target_properties(parseflashfile PROPERTIES
+  OUTPUT_NAME "parseflashfile"
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
   ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
