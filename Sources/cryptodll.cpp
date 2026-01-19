@@ -41,6 +41,9 @@
 #include "secblock.h"
 #include "queue.h"
 #include "oids.h"
+#include "crc.h"
+#include "aes.h"
+#include "cmac.h"
 // ============================================================================
 // CaplInstanceData
 //
@@ -246,6 +249,157 @@ size_t CAPLEXPORT CAPLPASCAL Hash256(
     return CryptoPP::SHA256::DIGESTSIZE;
 }
 
+/**
+ * @brief 计算输入数据的 CRC32。
+ *
+ * @param message             输入的字节数组。
+ * @param messageLen          输入数据长度。
+ * @param crc_out             输出 CRC32（4 字节，大端序）。
+ * @param crc_out_len         输出缓冲区大小。
+ * @return size_t             成功返回 4；失败返回 0。
+ */
+size_t CAPLEXPORT CAPLPASCAL CRC32(
+    const CryptoPP::byte* message,
+    size_t messageLen,
+    CryptoPP::byte* crc_out,
+    size_t crc_out_len) {
+    if ((message == nullptr && messageLen > 0) || crc_out == nullptr) {
+        return 0;
+    }
+    if (crc_out_len < CryptoPP::CRC32::DIGESTSIZE) {
+        return 0;
+    }
+
+    CryptoPP::CRC32 crc;
+    CryptoPP::byte digest[CryptoPP::CRC32::DIGESTSIZE];
+    crc.Update(message, messageLen);
+    crc.Final(digest);
+    crc_out[0] = digest[3];
+    crc_out[1] = digest[2];
+    crc_out[2] = digest[1];
+    crc_out[3] = digest[0];
+    return CryptoPP::CRC32::DIGESTSIZE;
+}
+
+static uint32_t Reflect32(uint32_t value) {
+    uint32_t result = 0;
+    for (int i = 0; i < 32; ++i) {
+        result = (result << 1) | (value & 0x01u);
+        value >>= 1;
+    }
+    return result;
+}
+
+/**
+ * @brief 计算可配置参数的 CRC32。
+ *
+ * @param message             输入的字节数组。
+ * @param messageLen          输入数据长度。
+ * @param poly                多项式（不反转形式，例如 0x04C11DB7）。
+ * @param initValue           初始值。
+ * @param xorOut              结果异或值。
+ * @param refin               输入反转（0=否，非 0=是）。
+ * @param refout              输出反转（0=否，非 0=是）。
+ * @param crc_out             输出 CRC32（4 字节，大端序）。
+ * @param crc_out_len         输出缓冲区大小。
+ * @return size_t             成功返回 4；失败返回 0。
+ */
+size_t CAPLEXPORT CAPLPASCAL CRC32Custom(
+    const CryptoPP::byte* message,
+    size_t messageLen,
+    uint32_t poly,
+    uint32_t initValue,
+    uint32_t xorOut,
+    uint32_t refin,
+    uint32_t refout,
+    CryptoPP::byte* crc_out,
+    size_t crc_out_len) {
+    if ((message == nullptr && messageLen > 0) || crc_out == nullptr) {
+        return 0;
+    }
+    if (crc_out_len < 4) {
+        return 0;
+    }
+
+    uint32_t crc = initValue;
+    const bool reflectIn = (refin != 0);
+    const bool reflectOut = (refout != 0);
+
+    if (reflectIn) {
+        const uint32_t polyRef = Reflect32(poly);
+        for (size_t i = 0; i < messageLen; ++i) {
+            crc ^= static_cast<uint32_t>(message[i]);
+            for (int bit = 0; bit < 8; ++bit) {
+                if (crc & 0x01u) {
+                    crc = (crc >> 1) ^ polyRef;
+                } else {
+                    crc >>= 1;
+                }
+            }
+        }
+    } else {
+        for (size_t i = 0; i < messageLen; ++i) {
+            crc ^= (static_cast<uint32_t>(message[i]) << 24);
+            for (int bit = 0; bit < 8; ++bit) {
+                if (crc & 0x80000000u) {
+                    crc = (crc << 1) ^ poly;
+                } else {
+                    crc <<= 1;
+                }
+            }
+        }
+    }
+
+    if (reflectOut != reflectIn) {
+        crc = Reflect32(crc);
+    }
+    crc ^= xorOut;
+
+    crc_out[0] = static_cast<CryptoPP::byte>((crc >> 24) & 0xFF);
+    crc_out[1] = static_cast<CryptoPP::byte>((crc >> 16) & 0xFF);
+    crc_out[2] = static_cast<CryptoPP::byte>((crc >> 8) & 0xFF);
+    crc_out[3] = static_cast<CryptoPP::byte>(crc & 0xFF);
+    return 4;
+}
+
+/**
+ * @brief 计算 CMAC-AES（支持 128/192/256 位密钥）。
+ *
+ * @param key                密钥字节数组（16/24/32 字节）。
+ * @param keyLen             密钥长度，必须为 16/24/32。
+ * @param message            输入数据字节数组。
+ * @param messageLen         输入数据长度。
+ * @param mac_out            输出 CMAC（固定 16 字节）。
+ * @param mac_out_len        输出缓冲区大小（至少 16）。
+ * @return size_t            成功返回 16；失败返回 0。
+ */
+size_t CAPLEXPORT CAPLPASCAL CMACAES(
+    const CryptoPP::byte* key,
+    size_t keyLen,
+    const CryptoPP::byte* message,
+    size_t messageLen,
+    CryptoPP::byte* mac_out,
+    size_t mac_out_len) {
+    if (key == nullptr || mac_out == nullptr) {
+        return 0;
+    }
+    if (keyLen != 16 && keyLen != 24 && keyLen != 32) {
+        return 0;
+    }
+    if (message == nullptr && messageLen > 0) {
+        return 0;
+    }
+    if (mac_out_len < CryptoPP::AES::BLOCKSIZE) {
+        return 0;
+    }
+
+    CryptoPP::CMAC<CryptoPP::AES> cmac;
+    cmac.SetKey(key, keyLen);
+    cmac.Update(message, messageLen);
+    cmac.Final(mac_out);
+    return CryptoPP::AES::BLOCKSIZE;
+}
+
 static bool BuildUtcTimeString(std::time_t timeValue, CryptoPP::SecByteBlock& out) {
     std::tm tmUtc;
     if (gmtime_s(&tmUtc, &timeValue) != 0) {
@@ -284,31 +438,40 @@ static void EncodeName(CryptoPP::DERSequenceEncoder& out, const char* commonName
 }
 
 /**
- * @brief 使用 RSA + PKCS#1 v1.5 生成自签名 X.509 证书（DER）。
+ * @brief 使用 CA 私钥签发 RSA X.509 证书（DER）。
  *
- * @param privateKeyHex       十六进制格式的私钥字符串（PKCS#8 DER）。
- * @param subjectCN           证书主题/签发者的 CN。
+ * @param caPrivateKeyHex     CA 私钥（PKCS#8 DER 十六进制）。
+ * @param caCN                CA 证书主题 CN（签发者）。
+ * @param subjectPrivateKeyHex 被签发者私钥（PKCS#8 DER 十六进制，用于提取公钥）。
+ * @param subjectCN           被签发者主题 CN。
  * @param daysValid           有效期天数（0 表示 365 天）。
  * @param cert_out            输出证书 DER 的缓冲区。
  * @param cert_out_len        输出缓冲区大小。
  * @return size_t             成功返回证书字节数；失败返回 0。
  */
 size_t CAPLEXPORT CAPLPASCAL GenerateX509Certificate(
-    const char* privateKeyHex,
+    const char* caPrivateKeyHex,
+    const char* caCN,
+    const char* subjectPrivateKeyHex,
     const char* subjectCN,
     uint32_t daysValid,
     CryptoPP::byte* cert_out,
     size_t cert_out_len) {
-    if (privateKeyHex == nullptr || subjectCN == nullptr || cert_out == nullptr) {
+    if (caPrivateKeyHex == nullptr || caCN == nullptr || subjectPrivateKeyHex == nullptr ||
+        subjectCN == nullptr || cert_out == nullptr) {
         return 0;
     }
 
     try {
-        CryptoPP::RSA::PrivateKey privateKey;
-        CryptoPP::StringSource ssPrivate(privateKeyHex, true, new CryptoPP::HexDecoder);
-        privateKey.Load(ssPrivate);
+        CryptoPP::RSA::PrivateKey caPrivateKey;
+        CryptoPP::StringSource ssCaPrivate(caPrivateKeyHex, true, new CryptoPP::HexDecoder);
+        caPrivateKey.Load(ssCaPrivate);
 
-        CryptoPP::RSA::PublicKey publicKey(privateKey);
+        CryptoPP::RSA::PrivateKey subjectPrivateKey;
+        CryptoPP::StringSource ssSubjectPrivate(subjectPrivateKeyHex, true, new CryptoPP::HexDecoder);
+        subjectPrivateKey.Load(ssSubjectPrivate);
+
+        CryptoPP::RSA::PublicKey subjectPublicKey(subjectPrivateKey);
         CryptoPP::AutoSeededRandomPool rng;
 
         CryptoPP::ByteQueue tbsQueue;
@@ -326,7 +489,7 @@ size_t CAPLEXPORT CAPLPASCAL GenerateX509Certificate(
             CryptoPP::DEREncodeNull(sigAlg);
             sigAlg.MessageEnd();
 
-            EncodeName(tbsSeq, subjectCN);
+            EncodeName(tbsSeq, caCN);
 
             const uint32_t effectiveDays = (daysValid == 0) ? 365U : daysValid;
             const std::time_t now = std::time(nullptr);
@@ -344,7 +507,7 @@ size_t CAPLEXPORT CAPLPASCAL GenerateX509Certificate(
             validity.MessageEnd();
 
             EncodeName(tbsSeq, subjectCN);
-            publicKey.Save(tbsSeq);
+            subjectPublicKey.Save(tbsSeq);
 
             tbsSeq.MessageEnd();
         }
@@ -352,7 +515,115 @@ size_t CAPLEXPORT CAPLPASCAL GenerateX509Certificate(
         CryptoPP::SecByteBlock tbsData(tbsQueue.CurrentSize());
         tbsQueue.Get(tbsData, tbsData.size());
 
-        CryptoPP::RSASS<CryptoPP::PKCS1v15, CryptoPP::SHA256>::Signer signer(privateKey);
+        CryptoPP::RSASS<CryptoPP::PKCS1v15, CryptoPP::SHA256>::Signer signer(caPrivateKey);
+        CryptoPP::SecByteBlock signature(signer.MaxSignatureLength());
+        size_t sigLen = signer.SignMessage(rng, tbsData, tbsData.size(), signature);
+
+        CryptoPP::ByteQueue certQueue;
+        {
+            CryptoPP::DERSequenceEncoder certSeq(certQueue);
+            certSeq.Put(tbsData, tbsData.size());
+
+            CryptoPP::DERSequenceEncoder sigAlg(certSeq);
+            CryptoPP::ASN1::sha256WithRSAEncryption().DEREncode(sigAlg);
+            CryptoPP::DEREncodeNull(sigAlg);
+            sigAlg.MessageEnd();
+
+            CryptoPP::DEREncodeBitString(certSeq, signature.data(), sigLen, 0);
+            certSeq.MessageEnd();
+        }
+
+        const size_t certLen = certQueue.CurrentSize();
+        if (cert_out_len < certLen) {
+            return 0;
+        }
+
+        certQueue.Get(cert_out, certLen);
+        return certLen;
+    }
+    catch (const CryptoPP::Exception&) {
+        return 0;
+    }
+}
+
+/**
+ * @brief 使用 CA 私钥签发 RSA X.509 证书（DER，输入为公钥）。
+ *
+ * @param caPrivateKeyHex     CA 私钥（PKCS#8 DER 十六进制）。
+ * @param caCN                CA 证书主题 CN（签发者）。
+ * @param subjectPublicKeyHex 被签发者公钥（X.509 SubjectPublicKeyInfo DER 十六进制）。
+ * @param subjectCN           被签发者主题 CN。
+ * @param daysValid           有效期天数（0 表示 365 天）。
+ * @param cert_out            输出证书 DER 的缓冲区。
+ * @param cert_out_len        输出缓冲区大小。
+ * @return size_t             成功返回证书字节数；失败返回 0。
+ */
+size_t CAPLEXPORT CAPLPASCAL GenerateX509CertificateWithPublicKey(
+    const char* caPrivateKeyHex,
+    const char* caCN,
+    const char* subjectPublicKeyHex,
+    const char* subjectCN,
+    uint32_t daysValid,
+    CryptoPP::byte* cert_out,
+    size_t cert_out_len) {
+    if (caPrivateKeyHex == nullptr || caCN == nullptr || subjectPublicKeyHex == nullptr ||
+        subjectCN == nullptr || cert_out == nullptr) {
+        return 0;
+    }
+
+    try {
+        CryptoPP::RSA::PrivateKey caPrivateKey;
+        CryptoPP::StringSource ssCaPrivate(caPrivateKeyHex, true, new CryptoPP::HexDecoder);
+        caPrivateKey.Load(ssCaPrivate);
+
+        CryptoPP::RSA::PublicKey subjectPublicKey;
+        CryptoPP::StringSource ssSubjectPublic(subjectPublicKeyHex, true, new CryptoPP::HexDecoder);
+        subjectPublicKey.Load(ssSubjectPublic);
+
+        CryptoPP::AutoSeededRandomPool rng;
+
+        CryptoPP::ByteQueue tbsQueue;
+        {
+            CryptoPP::DERSequenceEncoder tbsSeq(tbsQueue);
+
+            CryptoPP::DERGeneralEncoder version(tbsSeq, CryptoPP::CONTEXT_SPECIFIC | CryptoPP::CONSTRUCTED | 0);
+            CryptoPP::DEREncodeUnsigned(version, 2);
+            version.MessageEnd();
+
+            CryptoPP::DEREncodeUnsigned(tbsSeq, 1U);
+
+            CryptoPP::DERSequenceEncoder sigAlg(tbsSeq);
+            CryptoPP::ASN1::sha256WithRSAEncryption().DEREncode(sigAlg);
+            CryptoPP::DEREncodeNull(sigAlg);
+            sigAlg.MessageEnd();
+
+            EncodeName(tbsSeq, caCN);
+
+            const uint32_t effectiveDays = (daysValid == 0) ? 365U : daysValid;
+            const std::time_t now = std::time(nullptr);
+            const std::time_t notAfter = now + static_cast<std::time_t>(effectiveDays) * 24 * 60 * 60;
+
+            CryptoPP::SecByteBlock notBeforeStr;
+            CryptoPP::SecByteBlock notAfterStr;
+            if (!BuildUtcTimeString(now, notBeforeStr) || !BuildUtcTimeString(notAfter, notAfterStr)) {
+                return 0;
+            }
+
+            CryptoPP::DERSequenceEncoder validity(tbsSeq);
+            CryptoPP::DEREncodeDate(validity, notBeforeStr, CryptoPP::UTC_TIME);
+            CryptoPP::DEREncodeDate(validity, notAfterStr, CryptoPP::UTC_TIME);
+            validity.MessageEnd();
+
+            EncodeName(tbsSeq, subjectCN);
+            subjectPublicKey.Save(tbsSeq);
+
+            tbsSeq.MessageEnd();
+        }
+
+        CryptoPP::SecByteBlock tbsData(tbsQueue.CurrentSize());
+        tbsQueue.Get(tbsData, tbsData.size());
+
+        CryptoPP::RSASS<CryptoPP::PKCS1v15, CryptoPP::SHA256>::Signer signer(caPrivateKey);
         CryptoPP::SecByteBlock signature(signer.MaxSignatureLength());
         size_t sigLen = signer.SignMessage(rng, tbsData, tbsData.size(), signature);
 
@@ -446,7 +717,11 @@ CAPL_DLL_INFO4 table[] = {
   {"dllRSASignByteArrayPSS", (CAPL_FARCALL)RSASignByteArrayPSS, "RSA", "Sign a byte array using RSASSA-PSS with the specified hexadecimal private key.", 'L', 5, "CBLBL", "\001\001\000\001\000", {"privateKeyHex","message","messageLen","signature_out","signature_out_len"}},
   {"dllRSASignByteArrayPKCS1", (CAPL_FARCALL)RSASignByteArrayPKCS1, "RSA", "Sign a byte array with RSA PKCS#1 v1.5 using the specified hexadecimal private key.", 'L', 5, "CBLBL", "\001\001\000\001\000", {"privateKeyHex","message","messageLen","signature_out","signature_out_len"}},
   {"dllHash256", (CAPL_FARCALL)Hash256, "Algorithm", "Compute SHA-256 hash for a byte array.", 'L', 4, "BLBL", "\001\000\001\000", {"message","messageLen","hash_out","hash_out_len"}},
-  {"dllGenerateX509Certificate", (CAPL_FARCALL)GenerateX509Certificate, "RSA", "Generate a self-signed RSA X.509 certificate (DER).", 'L', 5, "CCLBL", "\001\001\000\001\000", {"privateKeyHex","subjectCN","daysValid","cert_out","cert_out_len"}},
+  {"dllCRC32", (CAPL_FARCALL)CRC32, "Algorithm", "Compute CRC32 for a byte array.", 'L', 4, "BLBL", "\001\000\001\000", {"message","messageLen","crc_out","crc_out_len"}},
+  {"dllCRC32Custom", (CAPL_FARCALL)CRC32Custom, "Algorithm", "Compute configurable CRC32 for a byte array.", 'L', 9, "BLLLLLLBL", "\001\000\000\000\000\000\000\001\000", {"message","messageLen","poly","initValue","xorOut","refin","refout","crc_out","crc_out_len"}},
+  {"dllCMACAES", (CAPL_FARCALL)CMACAES, "Algorithm", "Compute CMAC-AES (128/192/256) for a byte array.", 'L', 6, "BLBLBL", "\001\000\001\000\001\000", {"key","keyLen","message","messageLen","mac_out","mac_out_len"}},
+  {"dllGenerateX509Certificate", (CAPL_FARCALL)GenerateX509Certificate, "RSA", "Generate a CA-signed RSA X.509 certificate (DER).", 'L', 7, "CCCCLBL", "\001\001\001\001\000\001\000", {"caPrivateKeyHex","caCN","subjectPrivateKeyHex","subjectCN","daysValid","cert_out","cert_out_len"}},
+  {"dllGenerateX509CertificateWithPublicKey", (CAPL_FARCALL)GenerateX509CertificateWithPublicKey, "RSA", "Generate a CA-signed RSA X.509 certificate (DER) with a public key.", 'L', 7, "CCCCLBL", "\001\001\001\001\000\001\000", {"caPrivateKeyHex","caCN","subjectPublicKeyHex","subjectCN","daysValid","cert_out","cert_out_len"}},
   {"dllExtractPublicKeyParams", (CAPL_FARCALL)ExtractPublicKeyParams, "RSA", "extract public key parameters from a C-style private key string", 'L', 5, {'C','B','L'-128,'B','L'-128}, "\001\001\000\001\000", {"privateKeyHex","modulusBytes","modulusLength","publicExponentBytes","publicExponentLength"}},
   {0, 0}
 };

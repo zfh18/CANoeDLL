@@ -53,7 +53,11 @@
 - `dllRSASignMessagePSS` / `dllRSASignByteArrayPSS`：RSA PSS 签名
 - `dllRSASignMessagePKCS1` / `dllRSASignByteArrayPKCS1`：RSA PKCS#1 v1.5 签名
 - `dllHash256`：SHA-256 哈希
-- `dllGenerateX509Certificate`：自签名 X.509 证书（DER，RSA 任意位数）
+- `dllCRC32`：CRC32 校验
+- `dllCRC32Custom`：CRC32（可配置多项式/初始值/异或值/输入输出反转）
+- `dllCMACAES`：CMAC-AES（支持 128/192/256 位密钥）
+- `dllGenerateX509Certificate`：CA 签名 X.509 证书（DER，RSA 任意位数）
+- `dllGenerateX509CertificateWithPublicKey`：CA 签名 X.509 证书（DER，输入为公钥）
 - `dllExtractPublicKeyParams`：提取 RSA 公钥参数
 - `dllparseFile`：解析 HEX/S19/BIN 文件（返回类型）
 - `dllgetBlockCount` / `dllgetBlockStartAddress` / `dllgetBlockDataLength` / `dllgetBlockData`：获取解析后的数据块信息
