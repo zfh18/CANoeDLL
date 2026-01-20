@@ -81,6 +81,15 @@ add_library(parseflashfile SHARED
   Sources/parseflashfile.cpp
 )
 
+add_library(seednkey_sls SHARED
+  Sources/seednkey_sls.cpp
+)
+
+target_compile_definitions(seednkey_sls PRIVATE
+  _USRDLL
+  KEYGENALGO_EXPORTS
+)
+
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
   set(CRYPTLIB_PATH "${PROJECT_SOURCE_DIR}/ExtLib/cryptlib64.lib")
 else()
@@ -116,6 +125,21 @@ foreach(target_name IN ITEMS cryptodll parseflashfile)
   endif()
 endforeach()
 
+target_include_directories(seednkey_sls PRIVATE
+  ${PROJECT_SOURCE_DIR}/ExtInclude
+  ${PROJECT_SOURCE_DIR}/Includes
+)
+
+target_link_libraries(seednkey_sls PRIVATE
+  ${CRYPTLIB_PATH}
+)
+
+if(MSVC)
+  target_link_options(seednkey_sls PRIVATE
+    "/MAP"
+  )
+endif()
+
 add_executable(cryptodll_selftest
   Tests/capldll_selftest.cpp
   Sources/cryptodll.cpp
@@ -146,6 +170,13 @@ set_target_properties(cryptodll PROPERTIES
 
 set_target_properties(parseflashfile PROPERTIES
   OUTPUT_NAME "parseflashfile"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+)
+
+set_target_properties(seednkey_sls PROPERTIES
+  OUTPUT_NAME "SeednKey"
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
   ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"

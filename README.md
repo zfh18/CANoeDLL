@@ -24,7 +24,7 @@
    - `x86 (Win32)` 或 `x64`
 2. 命令面板 `CMake: Configure`
 3. 命令面板 `CMake: Set Build Target`：
-   - `cryptodll` 或 `parseflashfile`
+   - `cryptodll` / `parseflashfile` / `seednkey_sls`
 4. 命令面板 `CMake: Select Build Preset`：
    - `Release | x86 (Win32)` 或 `Release | x64`
 5. 命令面板 `CMake: Build`
@@ -39,6 +39,9 @@
 - `parseflashfile`：
   - x86：`build/x86/bin/Release/parseflashfile.dll`
   - x64：`build/x64/bin/Release/parseflashfile.dll`
+- `seednkey_sls`：
+  - x86：`build/x86/bin/Release/SeednKey.dll`
+  - x64：`build/x64/bin/Release/SeednKey.dll`
 - 自测程序：
   - x86：`build/x86/bin/Release/cryptodll_selftest.exe`
   - x64：`build/x64/bin/Release/cryptodll_selftest.exe`
@@ -47,6 +50,8 @@
   - x64：`build/x64/bin/Release/cryptodll.map`
   - x86：`build/x86/bin/Release/parseflashfile.map`
   - x64：`build/x64/bin/Release/parseflashfile.map`
+  - x86：`build/x86/bin/Release/SeednKey.map`
+  - x64：`build/x64/bin/Release/SeednKey.map`
 
 ## 导出函数（节选）
 
