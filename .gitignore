@@ -39,6 +39,10 @@ CMakeUserPresets.json
 *.exe
 *.map
 
+# Allow required Crypto++ static libs
+!ExtLib/cryptlib32.lib
+!ExtLib/cryptlib64.lib
+
 # Windows noise
 Thumbs.db
 Desktop.ini
