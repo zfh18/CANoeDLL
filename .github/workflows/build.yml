@@ -45,3 +45,12 @@ jobs:
       - name: Build (x64)
         if: matrix.arch == 'x64' && env.CRYPTLIB_PRESENT == 'true'
         run: cmake --build --preset x64-release --target ${{ matrix.target }}
+
+      - name: Upload artifacts
+        if: env.CRYPTLIB_PRESENT == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.arch }}-${{ matrix.target }}
+          path: |
+            build/${{ matrix.arch }}/bin/Release/*.dll
+            build/${{ matrix.arch }}/bin/Release/*.map
