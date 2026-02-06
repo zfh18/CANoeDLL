@@ -1,0 +1,194 @@
+/*@!Encoding:936*/
+/**
+ * @file SecurityAlgorithm.cin
+ * @brief 岚图、赛力、零跑、奇瑞 27 服务算法，根据 seed 计算得出 key
+ * 部分算法由 cryptodll.dll 提供，故主程序中应先 #pragma library("cryptodll.dll")
+ */
+includes
+{
+  
+}
+
+variables
+{
+  #pragma message("Compilation SecurityAlgorithm.cin")
+}
+
+/**
+ * @brief 岚图系 27 服务算法，使用相同 mask，不同 level 算法不同，分 leve1 level9
+ * 根据不同的安全级别（0x01 或 0x09），使用不同的位重组算法计算安全密钥。
+ * 
+ * @param[in] seed 输入的种子值数组（4 字节）
+ * @param[out] securitykey 输出的安全密钥数组（4 字节）
+ * @param[in] level 安全级别，支持 0x01 或 0x09
+ * @param[in] mask 掩码数组（4 字节），用于与种子值进行异或运算
+ */
+void secAlgo_LT_calcKeyFromSeed(byte seed[], byte securitykey[], dword level, byte mask[])
+{
+  byte tmpKey[4];
+  int i;
+  
+  if (0x09 == level)
+  {
+    for (i = 0; i < 4; i ++)
+    {
+      tmpKey[i] = seed[i] ^ mask[i];
+    }
+    securitykey[0] = ((tmpKey[0] & 0x0f) << 4) | (tmpKey[1] & 0x0f);
+    securitykey[1] = ((tmpKey[1] & 0xf0) >> 4) | ((tmpKey[2] & 0x0f) << 4);
+    securitykey[2] = ((tmpKey[2] & 0xf0) >> 4) | (tmpKey[3] & 0xf0);
+    securitykey[3] = (tmpKey[3] & 0x0f) | ((tmpKey[0] & 0xf0) >> 4);
+  }
+  else if (0x01 == level)
+  {
+    for (i = 0; i < 4; i ++)
+    {
+      tmpKey[i] = seed[i] ^ mask[i];
+    }
+    securitykey[0] = ((tmpKey[0] & 0x0f) << 4) | (tmpKey[1] & 0xf0);
+    securitykey[1] = ((tmpKey[1] & 0x0f) << 4) | ((tmpKey[2] & 0xf0) >> 4);
+    securitykey[2] = (tmpKey[2] & 0xf0) | ((tmpKey[3] & 0xf0) >> 4);
+    securitykey[3] = ((tmpKey[3] & 0x0f) << 4) | (tmpKey[0] & 0x0f);
+  }
+  writeLineEx(4, 1, "Get Seed: [%02X %02X %02X %02X], Calculate Key: [%02X %02X %02X %02X]",
+    seed[0], seed[1], seed[2], seed[3], securitykey[0], securitykey[1], securitykey[2], securitykey[3]);
+}
+
+/**
+ * @brief 赛力斯系与猛士 27 服务算法，不同 level 对应不同 mask，算法一致，使用 CMAC(AES128) 算法
+ * 
+ * @param[in] seed 输入的种子值数组（16 字节）
+ * @param[out] securitykey 输出的安全密钥数组（16 字节）
+ * @param[in] mask 掩码数组（16 字节）
+ */
+void secAlgo_SLS_calcKeyFromSeed(byte seed[], byte securitykey[], byte mask[])
+{
+  dword keyLen;
+  
+  keyLen = 16;
+  //SecurityLocalGenerateCMAC(mask, elcount(mask), seed, elcount(seed), securitykey, keyLen);
+  if (dllCMACAES(mask, elcount(mask), seed, elcount(seed), securitykey, keyLen) == 16)
+  {
+    writeLineEx(4, 1, "Get Seed: [%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X]", 
+      seed[0], seed[1], seed[2], seed[3], seed[4], seed[5], seed[6], seed[7], 
+      seed[8], seed[9], seed[10], seed[11], seed[12], seed[13], seed[14], seed[15]);
+    writeLineEx(4, 1, "Calculate Key: [%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X]", 
+      securitykey[0], securitykey[1], securitykey[2], securitykey[3], securitykey[4], securitykey[5], securitykey[6], securitykey[7], 
+      securitykey[8], securitykey[9], securitykey[10], securitykey[11], securitykey[12], securitykey[13], securitykey[14], securitykey[15]);
+  } // dll 库
+  else
+  {
+    writeLineEx(0, 3, "CMAC-AES 计算错误！");
+  }
+}
+
+/**
+ * @brief 零跑系 27 服务算法，使用相同 mask，不同 level 算法不同，分 level1 level11
+ * 根据不同的安全级别（0x01 或 0x11）
+ * 
+ * @param[in] seed 输入的种子值数组（4 字节）
+ * @param[out] securitykey 输出的安全密钥数组（4 字节）
+ * @param[in] level 安全级别，支持 0x01 或 0x11
+ */
+void secAlgo_LP_calcKeyFromSeed(byte seed[], byte securitykey[], dword level)
+{
+  byte tmpKey[4];
+  dword seedTmp, keyTmp;
+  
+  seedTmp = (seed[0] << 24) + (seed[1] << 16) + (seed[2] << 8) + seed[3];
+  if (0x01 == level)
+  {
+    keyTmp = (((seedTmp >> 4) ^ seedTmp) << 3) ^ seedTmp;
+  }
+  else if (0x11 == level)
+  {
+  	dword y, z, sum;
+    byte n;
+    dword mask[4] = {0x4fe87269, 0x6bc361d8,0x9b127d51, 0x5ba41903}; /* 128 bits */
+    
+    y = ((seedTmp << 24) & 0xff000000) + ((seedTmp << 8) & 0xff0000) + ((seedTmp >> 8) & 0xff00) + ((seedTmp >> 24) & 0xff); /* swap byte order */
+    z = sum = 0; /* y = LOW_PART, z = HIGH_PART */
+    n = 64; /* number of iterations */
+    while (n > 0)
+    { /* encrypt */
+      y += (((z << 4) ^ (z >> 5)) + z) ^ (sum + mask[sum & 3]);
+      sum += 0x8f750a1d;
+      z += (((y << 4) ^ (y >> 5)) + y) ^ (sum + mask[(sum >> 11) & 3]);
+      n--;
+    }
+    keyTmp = ((z << 24) & 0xff000000) + ((z << 8) & 0xff0000) + ((z >> 8) & 0xff00) + ((z >> 24) & 0xff);
+  }
+  securitykey[0] = (keyTmp >> 24) & 0xFF;
+  securitykey[1] = (keyTmp >> 16) & 0xFF;
+  securitykey[2] = (keyTmp >> 8) & 0xFF;
+  securitykey[3] = keyTmp & 0xFF;
+  writeLineEx(4, 1, "Get Seed: [%02X %02X %02X %02X], Calculate Key: [%02X %02X %02X %02X]",
+    seed[0], seed[1], seed[2], seed[3], securitykey[0], securitykey[1], securitykey[2], securitykey[3]);
+}
+
+/**
+ * @brief 奇瑞系 27 服务算法，不同 level 算法不同，分 level1 level3 level5 level7
+ * 
+ * @param[in] seed 输入的种子值数组（4 字节）
+ * @param[out] securitykey 输出的安全密钥数组（4 字节）
+ * @param[in] level 安全级别，支持 0x01 0x3 0x5 0x7
+ */
+void secAlgo_QR_calcKeyFromSeed(byte seed[], byte securitykey[], dword level)
+{
+  dword lv1Mask = 0x6DD7;
+  dword lv3Mask = 0xE9BA;
+  dword lv5Mask = 0x17BA;
+  dword lv7Mask = 0xAD91;
+  long seedTmp, v5;
+  dword index, keyTmp;
+  
+  seedTmp = (seed[0] << 24) + ((seed[1] << 16) & 0xFF0000) + (word)(seed[2] << 8) + seed[3];
+  keyTmp = 0;
+  v5 = 0;
+  switch (level)
+  {
+    case 1:
+      keyTmp = lv1Mask ^ seedTmp;
+      for (index = 0; index < 0x20; ++ index)
+      {
+        if ((keyTmp & 1) != 0)
+          keyTmp = seedTmp ^ ((keyTmp >> 29) | (8 * keyTmp));
+        else
+          keyTmp = lv1Mask ^ ((keyTmp << 25) | ((qword)keyTmp >> 7));
+      }
+      break;
+    case 3:
+      keyTmp = lv3Mask ^ seedTmp;
+      for (index = 0; index < 0x20; ++ index)
+      {
+        if ( (keyTmp & 1) != 0 )
+          keyTmp = seedTmp ^ (keyTmp >> 1);
+        else
+          keyTmp = lv3Mask ^ (keyTmp >> 1);
+      }
+      break;
+    case 5:
+      keyTmp = lv5Mask ^ seedTmp;
+      for (index = 0; index < 0x20; ++ index)
+      {
+        if ((seedTmp & 0x80000000) == 0)
+          v5 = (seedTmp << 9) ^ (seedTmp >> 3);
+        else
+          v5 = (seedTmp >> 3) ^ (8 * (seedTmp ^ (seedTmp >> 1)));
+        keyTmp = lv5Mask ^ v5;
+      }
+      keyTmp = (keyTmp >> 17) | (keyTmp << 15);
+      break;
+    case 7:
+      keyTmp = lv7Mask ^ seedTmp;
+      for (index = 0; index < 0x20; ++ index)
+        keyTmp = lv7Mask ^ ((keyTmp >> 25) | (keyTmp << 7));
+      break;
+  }
+  securitykey[0] = (keyTmp >> 24) & 0xFF;
+  securitykey[1] = (keyTmp >> 16) & 0xFF;
+  securitykey[2] = (keyTmp >> 8) & 0xFF;
+  securitykey[3] = keyTmp & 0xFF;
+  writeLineEx(4, 1, "Get Seed: [%02X %02X %02X %02X], Calculate Key: [%02X %02X %02X %02X]",
+    seed[0], seed[1], seed[2], seed[3], securitykey[0], securitykey[1], securitykey[2], securitykey[3]);
+}

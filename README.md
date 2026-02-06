@@ -24,7 +24,7 @@
    - `x86 (Win32)` 或 `x64`
 2. 命令面板 `CMake: Configure`
 3. 命令面板 `CMake: Set Build Target`：
-   - `cryptodll` / `parseflashfile` / `seednkey_sls`
+   - `cryptodll` / `parseflashfile` / `seednkey_sls` / `securityalgo`
 4. 命令面板 `CMake: Select Build Preset`：
    - `Release | x86 (Win32)` 或 `Release | x64`
 5. 命令面板 `CMake: Build`
@@ -39,6 +39,9 @@
 - `parseflashfile`：
   - x86：`build/x86/bin/Release/parseflashfile.dll`
   - x64：`build/x64/bin/Release/parseflashfile.dll`
+- `securityalgo`：
+  - x86：`build/x86/bin/Release/SecurityAlgo.dll`
+  - x64：`build/x64/bin/Release/SecurityAlgo.dll`
 - `seednkey_sls`：
   - x86：`build/x86/bin/Release/SeednKey.dll`
   - x64：`build/x64/bin/Release/SeednKey.dll`
@@ -50,6 +53,8 @@
   - x64：`build/x64/bin/Release/cryptodll.map`
   - x86：`build/x86/bin/Release/parseflashfile.map`
   - x64：`build/x64/bin/Release/parseflashfile.map`
+  - x86：`build/x86/bin/Release/SecurityAlgo.map`
+  - x64：`build/x64/bin/Release/SecurityAlgo.map`
   - x86：`build/x86/bin/Release/SeednKey.map`
   - x64：`build/x64/bin/Release/SeednKey.map`
 
@@ -64,6 +69,10 @@
 - `dllGenerateX509Certificate`：CA 签名 X.509 证书（DER，RSA 任意位数）
 - `dllGenerateX509CertificateWithPublicKey`：CA 签名 X.509 证书（DER，输入为公钥）
 - `dllExtractPublicKeyParams`：提取 RSA 公钥参数
+- `dllSecAlgoLTCalcKeyFromSeed`：岚图系 27 服务（level 0x01/0x09，4 字节）
+- `dllSecAlgoSLSCalcKeyFromSeed`：赛力斯/猛士 27 服务（CMAC-AES128，16 字节）
+- `dllSecAlgoLPCalcKeyFromSeed`：零跑系 27 服务（level 0x01/0x11，4 字节）
+- `dllSecAlgoQRCalcKeyFromSeed`：奇瑞系 27 服务（level 0x01/0x03/0x05/0x07，4 字节）
 - `dllparseFile`：解析 HEX/S19/BIN 文件（返回类型）
 - `dllgetBlockCount` / `dllgetBlockStartAddress` / `dllgetBlockDataLength` / `dllgetBlockData`：获取解析后的数据块信息
 - `dllgetLastErrorMessage`：获取上一次解析错误信息（参数为 `message_out` 和 `maxLength`）

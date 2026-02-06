@@ -81,6 +81,11 @@ add_library(parseflashfile SHARED
   Sources/parseflashfile.cpp
 )
 
+add_library(securityalgo SHARED
+  Sources/capl_common.cpp
+  Sources/SecurityAlgo.cpp
+)
+
 add_library(seednkey_sls SHARED
   Sources/seednkey_sls.cpp
 )
@@ -96,7 +101,7 @@ else()
   set(CRYPTLIB_PATH "${PROJECT_SOURCE_DIR}/ExtLib/cryptlib32.lib")
 endif()
 
-foreach(target_name IN ITEMS cryptodll parseflashfile)
+foreach(target_name IN ITEMS cryptodll parseflashfile securityalgo)
   target_include_directories(${target_name} PRIVATE
     ${PROJECT_SOURCE_DIR}/ExtInclude
     ${PROJECT_SOURCE_DIR}/Includes
@@ -170,6 +175,13 @@ set_target_properties(cryptodll PROPERTIES
 
 set_target_properties(parseflashfile PROPERTIES
   OUTPUT_NAME "parseflashfile"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+)
+
+set_target_properties(securityalgo PROPERTIES
+  OUTPUT_NAME "SecurityAlgo"
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
   ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
