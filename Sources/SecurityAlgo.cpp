@@ -54,13 +54,14 @@ static void StoreU32BE(uint32_t value, CryptoPP::byte* out) {
 /**
  * @brief 计算 CMAC-AES（支持 128/192/256 位密钥）。
  *
- * @param key                密钥字节数组（16/24/32 字节）。
- * @param keyLen             密钥长度，必须为 16/24/32。
- * @param message            输入数据字节数组。
- * @param messageLen         输入数据长度。
- * @param mac_out            输出 CMAC（固定 16 字节）。
- * @param mac_out_len        输出缓冲区大小（至少 16）。
- * @return size_t            成功返回 16；失败返回 0。
+ * @param key                输入密钥（byte[]）。
+ * @param keyLen             密钥长度（dword，16/24/32）。
+ * @param message            输入数据（byte[]）。
+ * @param messageLen         输入长度（dword）。
+ * @param mac_out            输出 CMAC（byte[]，固定 16 字节）。
+ * @param mac_out_len         输出缓冲区大小（dword，至少 16）。
+ * @return size_t            成功返回 16，失败返回 0。
+ *
  */
 size_t CAPLEXPORT CAPLPASCAL CMACAES(
     const CryptoPP::byte* key,
@@ -91,6 +92,15 @@ size_t CAPLEXPORT CAPLPASCAL CMACAES(
 
 /**
  * @brief SecAlgo LT: level 0x01/0x09, 4-byte seed/key, mask required.
+ *
+ * @param seed               输入 seed（byte[]，4 字节）。
+ * @param seedLen            seed 长度（dword）。
+ * @param level              安全级别（dword，0x01/0x09）。
+ * @param mask               输入 mask（byte[]，4 字节）。
+ * @param maskLen            mask 长度（dword）。
+ * @param key_out            输出 key（byte[]，4 字节）。
+ * @param key_out_len        输出缓冲区大小（dword）。
+ * @return size_t            成功返回 4，失败返回 0。
  */
 size_t CAPLEXPORT CAPLPASCAL SecAlgoLTCalcKeyFromSeed(
     const CryptoPP::byte* seed,
@@ -132,6 +142,14 @@ size_t CAPLEXPORT CAPLPASCAL SecAlgoLTCalcKeyFromSeed(
 
 /**
  * @brief SecAlgo SLS: CMAC(AES128), 16-byte seed/key, 16-byte mask.
+ *
+ * @param seed               输入 seed（byte[]，16 字节）。
+ * @param seedLen            seed 长度（dword）。
+ * @param mask               输入 mask（byte[]，16 字节）。
+ * @param maskLen            mask 长度（dword）。
+ * @param key_out            输出 key（byte[]，16 字节）。
+ * @param key_out_len        输出缓冲区大小（dword）。
+ * @return size_t            成功返回 16，失败返回 0。
  */
 size_t CAPLEXPORT CAPLPASCAL SecAlgoSLSCalcKeyFromSeed(
     const CryptoPP::byte* seed,
@@ -151,6 +169,13 @@ size_t CAPLEXPORT CAPLPASCAL SecAlgoSLSCalcKeyFromSeed(
 
 /**
  * @brief SecAlgo LP: level 0x01/0x11, 4-byte seed/key.
+ *
+ * @param seed               输入 seed（byte[]，4 字节）。
+ * @param seedLen            seed 长度（dword）。
+ * @param level              安全级别（dword，0x01/0x11）。
+ * @param key_out            输出 key（byte[]，4 字节）。
+ * @param key_out_len        输出缓冲区大小（dword）。
+ * @return size_t            成功返回 4，失败返回 0。
  */
 size_t CAPLEXPORT CAPLPASCAL SecAlgoLPCalcKeyFromSeed(
     const CryptoPP::byte* seed,
@@ -197,6 +222,13 @@ size_t CAPLEXPORT CAPLPASCAL SecAlgoLPCalcKeyFromSeed(
 
 /**
  * @brief SecAlgo QR: level 0x01/0x03/0x05/0x07, 4-byte seed/key.
+ *
+ * @param seed               输入 seed（byte[]，4 字节）。
+ * @param seedLen            seed 长度（dword）。
+ * @param level              安全级别（dword，0x01/0x03/0x05/0x07）。
+ * @param key_out            输出 key（byte[]，4 字节）。
+ * @param key_out_len        输出缓冲区大小（dword）。
+ * @return size_t            成功返回 4，失败返回 0。
  */
 size_t CAPLEXPORT CAPLPASCAL SecAlgoQRCalcKeyFromSeed(
     const CryptoPP::byte* seed,
