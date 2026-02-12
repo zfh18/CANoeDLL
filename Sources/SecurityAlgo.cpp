@@ -63,7 +63,7 @@ static void StoreU32BE(uint32_t value, CryptoPP::byte* out) {
  * @return size_t            成功返回 16，失败返回 0。
  *
  */
-size_t CAPLEXPORT CAPLPASCAL CMACAES(
+static size_t CMACAES(
     const CryptoPP::byte* key,
     size_t keyLen,
     const CryptoPP::byte* message,
