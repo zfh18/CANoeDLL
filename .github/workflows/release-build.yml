@@ -1,0 +1,80 @@
+name: release-build
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag (for example v1.0.0)
+        required: true
+      name:
+        description: Release name (optional)
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86, x64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check Crypto++ lib
+        shell: pwsh
+        run: |
+          if ("${{ matrix.arch }}" -eq "x86") {
+            $libPath = "ExtLib/cryptlib32.lib"
+          } else {
+            $libPath = "ExtLib/cryptlib64.lib"
+          }
+
+          if (Test-Path $libPath) {
+            "CRYPTLIB_PRESENT=true" | Out-File -FilePath $env:GITHUB_ENV -Append
+          } else {
+            "CRYPTLIB_PRESENT=false" | Out-File -FilePath $env:GITHUB_ENV -Append
+            Write-Host "$libPath missing, skip build."
+          }
+
+      - name: Configure
+        if: env.CRYPTLIB_PRESENT == 'true'
+        run: cmake --preset ${{ matrix.arch }}
+
+      - name: Build all targets
+        if: env.CRYPTLIB_PRESENT == 'true'
+        run: cmake --build --preset ${{ matrix.arch }}-release --target cryptodll parseflashfile securityalgo seednkey_sls
+
+      - name: Upload build artifacts
+        if: env.CRYPTLIB_PRESENT == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.arch }}-release-assets
+          path: |
+            build/${{ matrix.arch }}/bin/Release/*.dll
+            build/${{ matrix.arch }}/bin/Release/*.map
+
+  publish-release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: "*-release-assets"
+          merge-multiple: true
+
+      - name: Create or update release and upload assets
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ inputs.tag }}
+          name: ${{ inputs.name != '' && inputs.name || inputs.tag }}
+          allowUpdates: true
+          replacesArtifacts: true
+          generateReleaseNotes: true
+          artifacts: "dist/*.dll,dist/*.map"
