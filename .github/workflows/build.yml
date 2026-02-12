@@ -3,30 +3,29 @@ name: build
 on:
   workflow_dispatch:
     inputs:
-      arch:
-        description: Build architecture
+      release_tag:
+        description: Git tag for release (for example v1.2.3)
         required: true
-        default: all
+        type: string
+      release_name:
+        description: Release name
+        required: true
+        default: CANoeDLL Release
+        type: string
+      publish_to_release:
+        description: Upload artifacts to GitHub Release
+        required: true
+        default: "true"
         type: choice
         options:
-          - all
-          - x86
-          - x64
-      target:
-        description: Build target
-        required: true
-        default: all
-        type: choice
-        options:
-          - all
-          - cryptodll
-          - parseflashfile
-          - securityalgo
-          - seednkey_sls
+          - "true"
+          - "false"
+
+permissions:
+  contents: write
 
 jobs:
   build-x86:
-    if: ${{ inputs.arch == 'all' || inputs.arch == 'x86' }}
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -47,15 +46,15 @@ jobs:
           }
 
       - name: Configure (x86)
-        if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
+        if: env.CRYPTLIB_PRESENT == 'true'
         run: cmake --preset x86
 
       - name: Build (x86)
-        if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
+        if: env.CRYPTLIB_PRESENT == 'true'
         run: cmake --build --preset x86-release --target ${{ matrix.target }}
 
       - name: Upload artifacts (x86)
-        if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
+        if: env.CRYPTLIB_PRESENT == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: x86-${{ matrix.target }}
@@ -64,7 +63,6 @@ jobs:
             build/x86/bin/Release/*.map
 
   build-x64:
-    if: ${{ inputs.arch == 'all' || inputs.arch == 'x64' }}
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -85,18 +83,39 @@ jobs:
           }
 
       - name: Configure (x64)
-        if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
+        if: env.CRYPTLIB_PRESENT == 'true'
         run: cmake --preset x64
 
       - name: Build (x64)
-        if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
+        if: env.CRYPTLIB_PRESENT == 'true'
         run: cmake --build --preset x64-release --target ${{ matrix.target }}
 
       - name: Upload artifacts (x64)
-        if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
+        if: env.CRYPTLIB_PRESENT == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: x64-${{ matrix.target }}
           path: |
             build/x64/bin/Release/*.dll
             build/x64/bin/Release/*.map
+
+  release:
+    if: ${{ inputs.publish_to_release == 'true' }}
+    needs: [build-x86, build-x64]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag }}
+          name: ${{ inputs.release_name }}
+          generate_release_notes: true
+          files: |
+            release-assets/*.dll
+            release-assets/*.map
