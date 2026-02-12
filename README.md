@@ -1,5 +1,7 @@
 # CANoeDLL 使用说明
 
+> 声明：本仓库中的全部代码由 AI 生成或在 AI 辅助下完成。
+
 本工程用于在 Cursor 中通过 CMake 生成 CANoe 使用的 CAPL DLL。
 
 ## 目录结构
