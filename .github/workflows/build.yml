@@ -1,10 +1,27 @@
 name: build
 
 on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+  workflow_dispatch:
+    inputs:
+      arch:
+        description: Build architecture
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - x86
+          - x64
+      target:
+        description: Build target
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - cryptodll
+          - parseflashfile
+          - seednkey_sls
 
 jobs:
   build-windows:
@@ -31,23 +48,23 @@ jobs:
           }
 
       - name: Configure (x86)
-        if: matrix.arch == 'x86' && env.CRYPTLIB_PRESENT == 'true'
+        if: matrix.arch == 'x86' && env.CRYPTLIB_PRESENT == 'true' && (github.event.inputs.arch == 'all' || github.event.inputs.arch == 'x86') && (github.event.inputs.target == 'all' || github.event.inputs.target == matrix.target)
         run: cmake --preset x86
 
       - name: Configure (x64)
-        if: matrix.arch == 'x64' && env.CRYPTLIB_PRESENT == 'true'
+        if: matrix.arch == 'x64' && env.CRYPTLIB_PRESENT == 'true' && (github.event.inputs.arch == 'all' || github.event.inputs.arch == 'x64') && (github.event.inputs.target == 'all' || github.event.inputs.target == matrix.target)
         run: cmake --preset x64
 
       - name: Build (x86)
-        if: matrix.arch == 'x86' && env.CRYPTLIB_PRESENT == 'true'
+        if: matrix.arch == 'x86' && env.CRYPTLIB_PRESENT == 'true' && (github.event.inputs.arch == 'all' || github.event.inputs.arch == 'x86') && (github.event.inputs.target == 'all' || github.event.inputs.target == matrix.target)
         run: cmake --build --preset x86-release --target ${{ matrix.target }}
 
       - name: Build (x64)
-        if: matrix.arch == 'x64' && env.CRYPTLIB_PRESENT == 'true'
+        if: matrix.arch == 'x64' && env.CRYPTLIB_PRESENT == 'true' && (github.event.inputs.arch == 'all' || github.event.inputs.arch == 'x64') && (github.event.inputs.target == 'all' || github.event.inputs.target == matrix.target)
         run: cmake --build --preset x64-release --target ${{ matrix.target }}
 
       - name: Upload artifacts
-        if: env.CRYPTLIB_PRESENT == 'true'
+        if: env.CRYPTLIB_PRESENT == 'true' && (github.event.inputs.arch == 'all' || github.event.inputs.arch == matrix.arch) && (github.event.inputs.target == 'all' || github.event.inputs.target == matrix.target)
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.arch }}-${{ matrix.target }}
