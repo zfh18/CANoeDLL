@@ -25,53 +25,78 @@ on:
           - seednkey_sls
 
 jobs:
-  build-windows:
+  build-x86:
+    if: ${{ inputs.arch == 'all' || inputs.arch == 'x86' }}
     runs-on: windows-latest
-    env:
-      SELECTED_ARCH: ${{ inputs.arch }}
-      SELECTED_TARGET: ${{ inputs.target }}
     strategy:
       fail-fast: false
       matrix:
-        arch: [x86, x64]
         target: [cryptodll, parseflashfile, securityalgo, seednkey_sls]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check Crypto++ libs
+      - name: Check Crypto++ x86 lib
         shell: pwsh
         run: |
-          $has32 = Test-Path "ExtLib/cryptlib32.lib"
-          $has64 = Test-Path "ExtLib/cryptlib64.lib"
-          if ($has32 -and $has64) {
+          if (Test-Path "ExtLib/cryptlib32.lib") {
             "CRYPTLIB_PRESENT=true" | Out-File -FilePath $env:GITHUB_ENV -Append
           } else {
             "CRYPTLIB_PRESENT=false" | Out-File -FilePath $env:GITHUB_ENV -Append
-            Write-Host "Crypto++ libs missing, skip build."
+            Write-Host "ExtLib/cryptlib32.lib missing, skip x86 build."
           }
 
       - name: Configure (x86)
-        if: matrix.arch == 'x86' && env.CRYPTLIB_PRESENT == 'true' && (env.SELECTED_ARCH == 'all' || env.SELECTED_ARCH == 'x86') && (env.SELECTED_TARGET == 'all' || env.SELECTED_TARGET == matrix.target)
+        if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
         run: cmake --preset x86
 
-      - name: Configure (x64)
-        if: matrix.arch == 'x64' && env.CRYPTLIB_PRESENT == 'true' && (env.SELECTED_ARCH == 'all' || env.SELECTED_ARCH == 'x64') && (env.SELECTED_TARGET == 'all' || env.SELECTED_TARGET == matrix.target)
-        run: cmake --preset x64
-
       - name: Build (x86)
-        if: matrix.arch == 'x86' && env.CRYPTLIB_PRESENT == 'true' && (env.SELECTED_ARCH == 'all' || env.SELECTED_ARCH == 'x86') && (env.SELECTED_TARGET == 'all' || env.SELECTED_TARGET == matrix.target)
+        if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
         run: cmake --build --preset x86-release --target ${{ matrix.target }}
 
-      - name: Build (x64)
-        if: matrix.arch == 'x64' && env.CRYPTLIB_PRESENT == 'true' && (env.SELECTED_ARCH == 'all' || env.SELECTED_ARCH == 'x64') && (env.SELECTED_TARGET == 'all' || env.SELECTED_TARGET == matrix.target)
-        run: cmake --build --preset x64-release --target ${{ matrix.target }}
-
-      - name: Upload artifacts
-        if: env.CRYPTLIB_PRESENT == 'true' && (env.SELECTED_ARCH == 'all' || env.SELECTED_ARCH == matrix.arch) && (env.SELECTED_TARGET == 'all' || env.SELECTED_TARGET == matrix.target)
+      - name: Upload artifacts (x86)
+        if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.arch }}-${{ matrix.target }}
+          name: x86-${{ matrix.target }}
           path: |
-            build/${{ matrix.arch }}/bin/Release/*.dll
-            build/${{ matrix.arch }}/bin/Release/*.map
+            build/x86/bin/Release/*.dll
+            build/x86/bin/Release/*.map
+
+  build-x64:
+    if: ${{ inputs.arch == 'all' || inputs.arch == 'x64' }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [cryptodll, parseflashfile, securityalgo, seednkey_sls]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check Crypto++ x64 lib
+        shell: pwsh
+        run: |
+          if (Test-Path "ExtLib/cryptlib64.lib") {
+            "CRYPTLIB_PRESENT=true" | Out-File -FilePath $env:GITHUB_ENV -Append
+          } else {
+            "CRYPTLIB_PRESENT=false" | Out-File -FilePath $env:GITHUB_ENV -Append
+            Write-Host "ExtLib/cryptlib64.lib missing, skip x64 build."
+          }
+
+      - name: Configure (x64)
+        if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
+        run: cmake --preset x64
+
+      - name: Build (x64)
+        if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
+        run: cmake --build --preset x64-release --target ${{ matrix.target }}
+
+      - name: Upload artifacts (x64)
+        if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
+        uses: actions/upload-artifact@v4
+        with:
+          name: x64-${{ matrix.target }}
+          path: |
+            build/x64/bin/Release/*.dll
+            build/x64/bin/Release/*.map
