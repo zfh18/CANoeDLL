@@ -4,7 +4,6 @@
 #include <windows.h>
 #include "KeyGenAlgoInterfaceEx.h"
 
-#include <cstring>  // 引入 memcpy
 #include <cryptlib.h>
 #include <cmac.h>
 #include <aes.h>
