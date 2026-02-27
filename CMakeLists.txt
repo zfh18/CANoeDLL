@@ -87,7 +87,7 @@ add_library(securityalgo SHARED
 )
 
 add_library(seednkey_sls SHARED
-  Sources/seednkey_sls.cpp
+  Sources/seednkey/seednkey_sls.cpp
 )
 
 target_compile_definitions(seednkey_sls PRIVATE
@@ -188,7 +188,6 @@ set_target_properties(securityalgo PROPERTIES
 )
 
 set_target_properties(seednkey_sls PROPERTIES
-  OUTPUT_NAME "SeednKey"
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
   ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
