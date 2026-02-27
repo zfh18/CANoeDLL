@@ -44,6 +44,7 @@
 #include "crc.h"
 #include "aes.h"
 #include "cmac.h"
+#include "hmac.h"
 // ============================================================================
 // CaplInstanceData
 //
@@ -400,6 +401,40 @@ size_t CAPLEXPORT CAPLPASCAL CMACAES(
     return CryptoPP::AES::BLOCKSIZE;
 }
 
+/**
+ * @brief 计算 HMAC-SHA1。
+ *
+ * @param key                 HMAC 密钥字节数组。
+ * @param keyLen              密钥长度（可为 0）。
+ * @param message             输入数据字节数组。
+ * @param messageLen          输入数据长度。
+ * @param mac_out             输出 HMAC（固定 20 字节）。
+ * @param mac_out_len         输出缓冲区大小（至少 20）。
+ * @return size_t             成功返回 20；失败返回 0。
+ */
+size_t CAPLEXPORT CAPLPASCAL HMACSHA1(
+    const CryptoPP::byte* key,
+    size_t keyLen,
+    const CryptoPP::byte* message,
+    size_t messageLen,
+    CryptoPP::byte* mac_out,
+    size_t mac_out_len) {
+    if ((key == nullptr && keyLen > 0) || mac_out == nullptr) {
+        return 0;
+    }
+    if (message == nullptr && messageLen > 0) {
+        return 0;
+    }
+    if (mac_out_len < CryptoPP::SHA1::DIGESTSIZE) {
+        return 0;
+    }
+
+    CryptoPP::HMAC<CryptoPP::SHA1> hmac(key, keyLen);
+    hmac.Update(message, messageLen);
+    hmac.Final(mac_out);
+    return CryptoPP::SHA1::DIGESTSIZE;
+}
+
 static bool BuildUtcTimeString(std::time_t timeValue, CryptoPP::SecByteBlock& out) {
     std::tm tmUtc;
     if (gmtime_s(&tmUtc, &timeValue) != 0) {
@@ -720,6 +755,7 @@ CAPL_DLL_INFO4 table[] = {
   {"dllCRC32", (CAPL_FARCALL)CRC32, "Algorithm", "Compute CRC32 for a byte array.", 'L', 4, "BLBL", "\001\000\001\000", {"message","messageLen","crc_out","crc_out_len"}},
   {"dllCRC32Custom", (CAPL_FARCALL)CRC32Custom, "Algorithm", "Compute configurable CRC32 for a byte array.", 'L', 9, "BLLLLLLBL", "\001\000\000\000\000\000\000\001\000", {"message","messageLen","poly","initValue","xorOut","refin","refout","crc_out","crc_out_len"}},
   {"dllCMACAES", (CAPL_FARCALL)CMACAES, "Algorithm", "Compute CMAC-AES (128/192/256) for a byte array.", 'L', 6, "BLBLBL", "\001\000\001\000\001\000", {"key","keyLen","message","messageLen","mac_out","mac_out_len"}},
+  {"dllHMACSHA1", (CAPL_FARCALL)HMACSHA1, "Algorithm", "Compute HMAC-SHA1 for a byte array.", 'L', 6, "BLBLBL", "\001\000\001\000\001\000", {"key","keyLen","message","messageLen","mac_out","mac_out_len"}},
   {"dllGenerateX509Certificate", (CAPL_FARCALL)GenerateX509Certificate, "RSA", "Generate a CA-signed RSA X.509 certificate (DER).", 'L', 7, "CCCCLBL", "\001\001\001\001\000\001\000", {"caPrivateKeyHex","caCN","subjectPrivateKeyHex","subjectCN","daysValid","cert_out","cert_out_len"}},
   {"dllGenerateX509CertificateWithPublicKey", (CAPL_FARCALL)GenerateX509CertificateWithPublicKey, "RSA", "Generate a CA-signed RSA X.509 certificate (DER) with a public key.", 'L', 7, "CCCCLBL", "\001\001\001\001\000\001\000", {"caPrivateKeyHex","caCN","subjectPublicKeyHex","subjectCN","daysValid","cert_out","cert_out_len"}},
   {"dllExtractPublicKeyParams", (CAPL_FARCALL)ExtractPublicKeyParams, "RSA", "extract public key parameters from a C-style private key string", 'L', 5, {'C','B','L'-128,'B','L'-128}, "\001\001\000\001\000", {"privateKeyHex","modulusBytes","modulusLength","publicExponentBytes","publicExponentLength"}},
