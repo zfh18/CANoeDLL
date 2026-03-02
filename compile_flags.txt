@@ -1,0 +1,4 @@
+-xc++
+-std=c++14
+-IExtInclude
+-IIncludes
