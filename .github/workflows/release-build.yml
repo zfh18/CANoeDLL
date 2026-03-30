@@ -11,6 +11,9 @@ on:
         required: false
         default: ""
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 permissions:
   contents: write
 
@@ -23,7 +26,7 @@ jobs:
         arch: [x86, x64]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check Crypto++ lib
         shell: pwsh
@@ -51,7 +54,7 @@ jobs:
 
       - name: Upload build artifacts
         if: env.CRYPTLIB_PRESENT == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.arch }}-release-assets
           path: |
@@ -63,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: dist
           pattern: "*-release-assets"

@@ -24,6 +24,9 @@ on:
           - securityalgo
           - seednkey_sls
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-x86:
     if: ${{ inputs.arch == 'all' || inputs.arch == 'x86' }}
@@ -34,7 +37,7 @@ jobs:
         target: [cryptodll, parseflashfile, securityalgo, seednkey_sls]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check Crypto++ x86 lib
         shell: pwsh
@@ -56,7 +59,7 @@ jobs:
 
       - name: Upload artifacts (x86)
         if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: x86-${{ matrix.target }}
           path: |
@@ -72,7 +75,7 @@ jobs:
         target: [cryptodll, parseflashfile, securityalgo, seednkey_sls]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check Crypto++ x64 lib
         shell: pwsh
@@ -94,7 +97,7 @@ jobs:
 
       - name: Upload artifacts (x64)
         if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: x64-${{ matrix.target }}
           path: |
