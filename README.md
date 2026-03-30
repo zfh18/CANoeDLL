@@ -45,8 +45,8 @@
   - x86：`build/x86/bin/Release/SecurityAlgo.dll`
   - x64：`build/x64/bin/Release/SecurityAlgo.dll`
 - `seednkey_sls`：
-  - x86：`build/x86/bin/Release/SeednKey.dll`
-  - x64：`build/x64/bin/Release/SeednKey.dll`
+  - x86：`build/x86/bin/Release/seednkey_sls.dll`
+  - x64：`build/x64/bin/Release/seednkey_sls.dll`
 - 自测程序：
   - x86：`build/x86/bin/Release/cryptodll_selftest.exe`
   - x64：`build/x64/bin/Release/cryptodll_selftest.exe`
@@ -57,31 +57,44 @@
   - x64：`build/x64/bin/Release/parseflashfile.map`
   - x86：`build/x86/bin/Release/SecurityAlgo.map`
   - x64：`build/x64/bin/Release/SecurityAlgo.map`
-  - x86：`build/x86/bin/Release/SeednKey.map`
-  - x64：`build/x64/bin/Release/SeednKey.map`
+  - x86：`build/x86/bin/Release/seednkey_sls.map`
+  - x64：`build/x64/bin/Release/seednkey_sls.map`
 
 ## 各 DLL 作用说明
 
 - `cryptodll.dll`：通用密码能力库，提供哈希、CRC、RSA 签名、CMAC-AES、证书生成等接口，适用于 CAPL 中的安全计算与证书处理。
 - `parseflashfile.dll`：刷写文件解析库，支持 HEX/S19/BIN 解析，并提供分块地址、长度、数据读取及错误信息查询接口。
 - `SecurityAlgo.dll`：UDS 27 服务安全算法库，封装多个项目/平台使用的 Seed-Key 算法，实现诊断安全访问中的 Seed 到 Key 计算。
-- `SeednKey.dll`：SLS KeyGen 算法库，面向 CANoe KeyGen 接口场景，按 Seed 和安全级别计算诊断访问 Key。
+- `seednkey_sls.dll`：SLS KeyGen 算法库，面向 CANoe KeyGen 接口场景，按 Seed 和安全级别计算诊断访问 Key。
 
 ## 导出函数（节选）
 
-- `dllRSASignMessagePSS` / `dllRSASignByteArrayPSS`：RSA PSS 签名
-- `dllRSASignMessagePKCS1` / `dllRSASignByteArrayPKCS1`：RSA PKCS#1 v1.5 签名
+### Algorithm
+
 - `dllHash256`：SHA-256 哈希
 - `dllCRC32`：CRC32 校验
+- `dllCRC8J1850`：CRC-8/SAE-J1850 校验
 - `dllCRC32Custom`：CRC32（可配置多项式/初始值/异或值/输入输出反转）
 - `dllCMACAES`：CMAC-AES（支持 128/192/256 位密钥）
+- `dllHMACSHA1`：HMAC-SHA1
+
+### RSA
+
+- `dllRSASignMessagePSS` / `dllRSASignByteArrayPSS`：RSA PSS 签名
+- `dllRSASignMessagePKCS1` / `dllRSASignByteArrayPKCS1`：RSA PKCS#1 v1.5 签名
 - `dllGenerateX509Certificate`：CA 签名 X.509 证书（DER，RSA 任意位数）
 - `dllGenerateX509CertificateWithPublicKey`：CA 签名 X.509 证书（DER，输入为公钥）
 - `dllExtractPublicKeyParams`：提取 RSA 公钥参数
+
+### UDS Seed-Key
+
 - `dllSecAlgoLTCalcKeyFromSeed`：27 服务 Seed-Key 算法 A（level 0x01/0x09，4 字节）
 - `dllSecAlgoSLSCalcKeyFromSeed`：27 服务 Seed-Key 算法 B（CMAC-AES128，16 字节）
 - `dllSecAlgoLPCalcKeyFromSeed`：27 服务 Seed-Key 算法 C（level 0x01/0x11，4 字节）
 - `dllSecAlgoQRCalcKeyFromSeed`：27 服务 Seed-Key 算法 D（level 0x01/0x03/0x05/0x07，4 字节）
+
+### Parse Flash File
+
 - `dllparseFile`：解析 HEX/S19/BIN 文件（返回类型）
 - `dllgetBlockCount` / `dllgetBlockStartAddress` / `dllgetBlockDataLength` / `dllgetBlockData`：获取解析后的数据块信息
 - `dllgetLastErrorMessage`：获取上一次解析错误信息（参数为 `message_out` 和 `maxLength`）
