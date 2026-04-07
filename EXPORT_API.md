@@ -25,10 +25,10 @@
 - 功能：计算 CRC32（输出 4 字节）
 - 返回：成功返回 `4`，失败返回 `0`
 
-#### `dllCRC8J1850(message, messageLen, crc_out, crc_out_len)`
+#### `dllCRC8J1850(message, messageLen)`
 - 功能：计算 CRC-8/SAE-J1850
 - 算法参数：`poly=0x1D, init=0xFF, refin=false, refout=false, xorout=0xFF`
-- 返回：成功返回 `1`，失败返回 `0`
+- 返回：成功返回 CRC8 值（`0~255`），失败返回 `-1`
 - 测试向量：输入 `3C 00 B0 00 03` 时输出 `0x32`
 
 #### `dllCRC32Custom(message, messageLen, poly, initValue, xorOut, refin, refout, crc_out, crc_out_len)`

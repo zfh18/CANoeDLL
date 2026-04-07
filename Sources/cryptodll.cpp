@@ -294,20 +294,13 @@ size_t CAPLEXPORT CAPLPASCAL CRC32(
  *
  * @param message             输入的字节数组。
  * @param messageLen          输入数据长度。
- * @param crc_out             输出 CRC8（1 字节）。
- * @param crc_out_len         输出缓冲区大小。
- * @return size_t             成功返回 1；失败返回 0。
+ * @return long               成功返回 CRC8 值（0~255）；失败返回 -1。
  */
-size_t CAPLEXPORT CAPLPASCAL CRC8J1850(
+long CAPLEXPORT CAPLPASCAL CRC8J1850(
     const CryptoPP::byte* message,
-    size_t messageLen,
-    CryptoPP::byte* crc_out,
-    size_t crc_out_len) {
-    if ((message == nullptr && messageLen > 0) || crc_out == nullptr) {
-        return 0;
-    }
-    if (crc_out_len < 1) {
-        return 0;
+    size_t messageLen) {
+    if (message == nullptr && messageLen > 0) {
+        return -1;
     }
 
     const uint8_t poly = 0x1D;
@@ -322,8 +315,7 @@ size_t CAPLEXPORT CAPLPASCAL CRC8J1850(
             }
         }
     }
-    crc_out[0] = static_cast<CryptoPP::byte>(crc ^ 0xFF);
-    return 1;
+    return static_cast<long>(static_cast<uint8_t>(crc ^ 0xFF));
 }
 
 static uint32_t Reflect32(uint32_t value) {
@@ -797,7 +789,7 @@ CAPL_DLL_INFO4 table[] = {
   {"dllRSASignByteArrayPKCS1", (CAPL_FARCALL)RSASignByteArrayPKCS1, "RSA", "Sign a byte array with RSA PKCS#1 v1.5 using the specified hexadecimal private key.", 'L', 5, "CBLBL", "\001\001\000\001\000", {"privateKeyHex","message","messageLen","signature_out","signature_out_len"}},
   {"dllHash256", (CAPL_FARCALL)Hash256, "Algorithm", "Compute SHA-256 hash for a byte array.", 'L', 4, "BLBL", "\001\000\001\000", {"message","messageLen","hash_out","hash_out_len"}},
   {"dllCRC32", (CAPL_FARCALL)CRC32, "Algorithm", "Compute CRC32 for a byte array.", 'L', 4, "BLBL", "\001\000\001\000", {"message","messageLen","crc_out","crc_out_len"}},
-  {"dllCRC8J1850", (CAPL_FARCALL)CRC8J1850, "Algorithm", "Compute CRC-8/SAE-J1850 for a byte array.", 'L', 4, "BLBL", "\001\000\001\000", {"message","messageLen","crc_out","crc_out_len"}},
+  {"dllCRC8J1850", (CAPL_FARCALL)CRC8J1850, "Algorithm", "Compute CRC-8/SAE-J1850 for a byte array. Return CRC value directly, or -1 on failure.", 'L', 2, "BL", "\001\000", {"message","messageLen"}},
   {"dllCRC32Custom", (CAPL_FARCALL)CRC32Custom, "Algorithm", "Compute configurable CRC32 for a byte array.", 'L', 9, "BLLLLLLBL", "\001\000\000\000\000\000\000\001\000", {"message","messageLen","poly","initValue","xorOut","refin","refout","crc_out","crc_out_len"}},
   {"dllCMACAES", (CAPL_FARCALL)CMACAES, "Algorithm", "Compute CMAC-AES (128/192/256) for a byte array.", 'L', 6, "BLBLBL", "\001\000\001\000\001\000", {"key","keyLen","message","messageLen","mac_out","mac_out_len"}},
   {"dllHMACSHA1", (CAPL_FARCALL)HMACSHA1, "Algorithm", "Compute HMAC-SHA1 for a byte array.", 'L', 6, "BLBLBL", "\001\000\001\000\001\000", {"key","keyLen","message","messageLen","mac_out","mac_out_len"}},
