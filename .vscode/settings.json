@@ -3,5 +3,8 @@
   "cmake.configureOnOpen": true,
   "cmake.statusbar.advanced": true,
   "cmake.showConfigureWithDebug": true,
-  "cmake.showStatusBar": "always"
+  "cmake.showStatusBar": "always",
+  "[cpp]": {
+    "files.encoding": "gbk"
+  }
 }

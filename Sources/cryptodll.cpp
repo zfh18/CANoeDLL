@@ -61,10 +61,10 @@
  * @param privateKeyHex       十六进制格式的私钥字符串。
  * @param message             要签名的 C-风格字符串。
  * @param signature_out       用于存储签名结果的字节数组。
- * @param signature_out_len   签名数组的缓冲区大小。
- * @return size_t             签名成功则返回实际签名长度；失败则返回 0。
+ * @param signature_out_capacity   签名输出缓冲区容量（调用方提供的 signature_out 数组大小）。
+ * @return size_t             签名成功则返回实际签名长度；缓冲区容量不足或签名失败返回 0。
  */
-size_t CAPLEXPORT CAPLPASCAL RSASignMessagePSS(const char* privateKeyHex, const char* message, CryptoPP::byte* signature_out, size_t signature_out_len) {
+size_t CAPLEXPORT CAPLPASCAL RSASignMessagePSS(const char* privateKeyHex, const char* message, CryptoPP::byte* signature_out, size_t signature_out_capacity) {
     try {
         CryptoPP::RSA::PrivateKey privateKey;
         CryptoPP::StringSource ssPrivate(privateKeyHex, true, new CryptoPP::HexDecoder);
@@ -83,7 +83,7 @@ size_t CAPLEXPORT CAPLPASCAL RSASignMessagePSS(const char* privateKeyHex, const 
             signature
         );
 
-        if (signature_out_len < signed_len) {
+        if (signature_out_capacity < signed_len) {
             return 0;
         }
 
@@ -102,14 +102,14 @@ size_t CAPLEXPORT CAPLPASCAL RSASignMessagePSS(const char* privateKeyHex, const 
  * @param privateKeyHex       十六进制格式的私钥字符串。
  * @param message             要签名的 C-风格字符串。
  * @param signature_out       用于存储签名结果的字节数组。
- * @param signature_out_len   签名数组的缓冲区大小。
- * @return size_t             签名成功则返回实际签名长度；失败则返回 0。
+ * @param signature_out_capacity   签名输出缓冲区容量（调用方提供的 signature_out 数组大小）。
+ * @return size_t             签名成功则返回实际签名长度；缓冲区容量不足或签名失败返回 0。
  */
 size_t CAPLEXPORT CAPLPASCAL RSASignMessagePKCS1(
     const char* privateKeyHex,
     const char* message,
     CryptoPP::byte* signature_out,
-    size_t signature_out_len) {
+    size_t signature_out_capacity) {
     try {
         CryptoPP::RSA::PrivateKey privateKey;
         CryptoPP::StringSource ssPrivate(privateKeyHex, true, new CryptoPP::HexDecoder);
@@ -126,7 +126,7 @@ size_t CAPLEXPORT CAPLPASCAL RSASignMessagePKCS1(
             signature
         );
 
-        if (signature_out_len < signed_len) {
+        if (signature_out_capacity < signed_len) {
             return 0;
         }
 
@@ -145,10 +145,10 @@ size_t CAPLEXPORT CAPLPASCAL RSASignMessagePKCS1(
  * @param message             要签名的字节数组。
  * @param messageLen          消息的长度。
  * @param signature_out       用于存储签名结果的字节数组。
- * @param signature_out_len   签名数组的缓冲区大小。
- * @return size_t             签名成功则返回实际签名长度；失败则返回 0。
+ * @param signature_out_capacity   签名输出缓冲区容量（调用方提供的 signature_out 数组大小）。
+ * @return size_t             签名成功则返回实际签名长度；缓冲区容量不足或签名失败返回 0。
  */
-size_t CAPLEXPORT CAPLPASCAL RSASignByteArrayPSS(const char* privateKeyHex, const CryptoPP::byte* message, size_t messageLen, CryptoPP::byte* signature_out, size_t signature_out_len) {
+size_t CAPLEXPORT CAPLPASCAL RSASignByteArrayPSS(const char* privateKeyHex, const CryptoPP::byte* message, size_t messageLen, CryptoPP::byte* signature_out, size_t signature_out_capacity) {
     try {
         CryptoPP::RSA::PrivateKey privateKey;
         CryptoPP::StringSource ssPrivate(privateKeyHex, true, new CryptoPP::HexDecoder);
@@ -166,7 +166,7 @@ size_t CAPLEXPORT CAPLPASCAL RSASignByteArrayPSS(const char* privateKeyHex, cons
             signature
         );
 
-        if (signature_out_len < signed_len) {
+        if (signature_out_capacity < signed_len) {
             return 0;
         }
 
@@ -186,15 +186,15 @@ size_t CAPLEXPORT CAPLPASCAL RSASignByteArrayPSS(const char* privateKeyHex, cons
  * @param message             要签名的字节数组。
  * @param messageLen          消息的长度。
  * @param signature_out       用于存储签名结果的字节数组。
- * @param signature_out_len   签名数组的缓冲区大小。
- * @return size_t             签名成功则返回实际签名长度；失败则返回 0。
+ * @param signature_out_capacity   签名输出缓冲区容量（调用方提供的 signature_out 数组大小）。
+ * @return size_t             签名成功则返回实际签名长度；缓冲区容量不足或签名失败返回 0。
  */
 size_t CAPLEXPORT CAPLPASCAL RSASignByteArrayPKCS1(
     const char* privateKeyHex,
     const CryptoPP::byte* message,
     size_t messageLen,
     CryptoPP::byte* signature_out,
-    size_t signature_out_len) {
+    size_t signature_out_capacity) {
     try {
         CryptoPP::RSA::PrivateKey privateKey;
         CryptoPP::StringSource ssPrivate(privateKeyHex, true, new CryptoPP::HexDecoder);
@@ -211,7 +211,7 @@ size_t CAPLEXPORT CAPLPASCAL RSASignByteArrayPKCS1(
             signature
         );
 
-        if (signature_out_len < signed_len) {
+        if (signature_out_capacity < signed_len) {
             return 0;
         }
 
@@ -726,52 +726,77 @@ size_t CAPLEXPORT CAPLPASCAL GenerateX509CertificateWithPublicKey(
 }
 
 /**
- * @brief 从私钥中提取 RSA 公钥参数（模数 n 与公钥指数 e）。
+ * @brief 从 RSA 私钥或公钥中提取公钥参数（模数 n 与公钥指数 e）。
  *
- * 输入的私钥为 PKCS#8 DER 十六进制字符串。函数会解析私钥并输出：
+ * 输入为 RSA 私钥或公钥的 DER 十六进制字符串。函数会自动识别密钥类型并输出：
  * - modulusBytes：模数 n 的大端字节序
  * - publicExponentBytes：公钥指数 e 的大端字节序
  *
- * @param privateKeyHex            十六进制格式的私钥字符串（PKCS#8 DER）。
+ * @param keyHex                   十六进制格式的 RSA 私钥或公钥字符串（DER）。
  * @param modulusBytes             输出模数 n 的缓冲区。
- * @param modulusLength            输入为缓冲区大小，输出为实际长度。
+ * @param modulusLength            输出模数 n 的实际长度。
  * @param publicExponentBytes      输出公钥指数 e 的缓冲区。
- * @param publicExponentLength     输入为缓冲区大小，输出为实际长度。
+ * @param publicExponentLength     输出公钥指数 e 的实际长度。
  * @return size_t                  成功返回 1；失败返回 0。
  */
 size_t CAPLEXPORT CAPLPASCAL ExtractPublicKeyParams(
-    const char* privateKeyHex,
+    const char* keyHex,
     byte* modulusBytes,
     size_t& modulusLength,
     byte* publicExponentBytes,
     size_t& publicExponentLength) {
+    if (keyHex == nullptr || modulusBytes == nullptr || publicExponentBytes == nullptr) {
+        modulusLength = 0;
+        publicExponentLength = 0;
+        return 0;
+    }
+
+    CryptoPP::Integer modulus;
+    CryptoPP::Integer publicExponent;
+    bool loaded = false;
+
     try {
         CryptoPP::HexDecoder hexDecoder;
-        hexDecoder.Put(reinterpret_cast<const byte*>(privateKeyHex), strlen(privateKeyHex));
+        hexDecoder.Put(reinterpret_cast<const byte*>(keyHex), strlen(keyHex));
         hexDecoder.MessageEnd();
 
         CryptoPP::RSA::PrivateKey privateKey;
         privateKey.Load(hexDecoder);
-
-        CryptoPP::Integer modulus = privateKey.GetModulus();
-        CryptoPP::Integer publicExponent = privateKey.GetPublicExponent();
-
-        // 将长度赋给引用参数
-        modulusLength = modulus.MinEncodedSize();
-        publicExponentLength = publicExponent.MinEncodedSize();
-
-        // 编码数据到调用者提供的缓冲区中
-        modulus.Encode(modulusBytes, modulusLength);
-        publicExponent.Encode(publicExponentBytes, publicExponentLength);
-
-        return 1; // 成功时返回非零值
+        modulus = privateKey.GetModulus();
+        publicExponent = privateKey.GetPublicExponent();
+        loaded = true;
     }
     catch (const CryptoPP::Exception&) {
-        // 失败时，将长度设置为 0
-        modulusLength = 0;
-        publicExponentLength = 0;
-        return 0; // 失败时返回 0
     }
+
+    if (!loaded) {
+        try {
+            CryptoPP::HexDecoder hexDecoder;
+            hexDecoder.Put(reinterpret_cast<const byte*>(keyHex), strlen(keyHex));
+            hexDecoder.MessageEnd();
+
+            CryptoPP::RSA::PublicKey publicKey;
+            publicKey.Load(hexDecoder);
+            modulus = publicKey.GetModulus();
+            publicExponent = publicKey.GetPublicExponent();
+            loaded = true;
+        }
+        catch (const CryptoPP::Exception&) {
+            modulusLength = 0;
+            publicExponentLength = 0;
+            return 0;
+        }
+    }
+
+    const size_t requiredModulusLength = modulus.MinEncodedSize();
+    const size_t requiredPublicExponentLength = publicExponent.MinEncodedSize();
+    modulusLength = requiredModulusLength;
+    publicExponentLength = requiredPublicExponentLength;
+
+    modulus.Encode(modulusBytes, requiredModulusLength);
+    publicExponent.Encode(publicExponentBytes, requiredPublicExponentLength);
+
+    return 1;
 }
 
 // ============================================================================
@@ -783,10 +808,10 @@ size_t CAPLEXPORT CAPLPASCAL ExtractPublicKeyParams(
 CAPL_DLL_INFO4 table[] = {
 {CDLL_VERSION_NAME, (CAPL_FARCALL)CDLL_VERSION, "", "", CAPL_DLL_CDECL, 0xabcd, CDLL_EXPORT },
 
-  {"dllRSASignMessagePSS", (CAPL_FARCALL)RSASignMessagePSS, "RSA", "Sign the message string with RSASSA-PSS using the specified hexadecimal private key.", 'L', 4, "CCBL", "\001\001\001\000", {"privateKeyHex","message","signature_out","signature_out_len"}},
-  {"dllRSASignMessagePKCS1", (CAPL_FARCALL)RSASignMessagePKCS1, "RSA", "Sign the message string with RSA PKCS#1 v1.5 using the specified hexadecimal private key.", 'L', 4, "CCBL", "\001\001\001\000", {"privateKeyHex","message","signature_out","signature_out_len"}},
-  {"dllRSASignByteArrayPSS", (CAPL_FARCALL)RSASignByteArrayPSS, "RSA", "Sign a byte array using RSASSA-PSS with the specified hexadecimal private key.", 'L', 5, "CBLBL", "\001\001\000\001\000", {"privateKeyHex","message","messageLen","signature_out","signature_out_len"}},
-  {"dllRSASignByteArrayPKCS1", (CAPL_FARCALL)RSASignByteArrayPKCS1, "RSA", "Sign a byte array with RSA PKCS#1 v1.5 using the specified hexadecimal private key.", 'L', 5, "CBLBL", "\001\001\000\001\000", {"privateKeyHex","message","messageLen","signature_out","signature_out_len"}},
+  {"dllRSASignMessagePSS", (CAPL_FARCALL)RSASignMessagePSS, "RSA", "Sign the message string with RSASSA-PSS using the specified hexadecimal private key.", 'L', 4, "CCBL", "\001\001\001\000", {"privateKeyHex","message","signature_out","signature_out_capacity"}},
+  {"dllRSASignMessagePKCS1", (CAPL_FARCALL)RSASignMessagePKCS1, "RSA", "Sign the message string with RSA PKCS#1 v1.5 using the specified hexadecimal private key.", 'L', 4, "CCBL", "\001\001\001\000", {"privateKeyHex","message","signature_out","signature_out_capacity"}},
+  {"dllRSASignByteArrayPSS", (CAPL_FARCALL)RSASignByteArrayPSS, "RSA", "Sign a byte array using RSASSA-PSS with the specified hexadecimal private key.", 'L', 5, "CBLBL", "\001\001\000\001\000", {"privateKeyHex","message","messageLen","signature_out","signature_out_capacity"}},
+  {"dllRSASignByteArrayPKCS1", (CAPL_FARCALL)RSASignByteArrayPKCS1, "RSA", "Sign a byte array with RSA PKCS#1 v1.5 using the specified hexadecimal private key.", 'L', 5, "CBLBL", "\001\001\000\001\000", {"privateKeyHex","message","messageLen","signature_out","signature_out_capacity"}},
   {"dllHash256", (CAPL_FARCALL)Hash256, "Algorithm", "Compute SHA-256 hash for a byte array.", 'L', 4, "BLBL", "\001\000\001\000", {"message","messageLen","hash_out","hash_out_len"}},
   {"dllCRC32", (CAPL_FARCALL)CRC32, "Algorithm", "Compute CRC32 for a byte array.", 'L', 4, "BLBL", "\001\000\001\000", {"message","messageLen","crc_out","crc_out_len"}},
   {"dllCRC8J1850", (CAPL_FARCALL)CRC8J1850, "Algorithm", "Compute CRC-8/SAE-J1850 for a byte array. Return CRC value directly, or -1 on failure.", 'L', 2, "BL", "\001\000", {"message","messageLen"}},
@@ -795,7 +820,7 @@ CAPL_DLL_INFO4 table[] = {
   {"dllHMACSHA1", (CAPL_FARCALL)HMACSHA1, "Algorithm", "Compute HMAC-SHA1 for a byte array.", 'L', 6, "BLBLBL", "\001\000\001\000\001\000", {"key","keyLen","message","messageLen","mac_out","mac_out_len"}},
   {"dllGenerateX509Certificate", (CAPL_FARCALL)GenerateX509Certificate, "RSA", "Generate a CA-signed RSA X.509 certificate (DER).", 'L', 7, "CCCCLBL", "\001\001\001\001\000\001\000", {"caPrivateKeyHex","caCN","subjectPrivateKeyHex","subjectCN","daysValid","cert_out","cert_out_len"}},
   {"dllGenerateX509CertificateWithPublicKey", (CAPL_FARCALL)GenerateX509CertificateWithPublicKey, "RSA", "Generate a CA-signed RSA X.509 certificate (DER) with a public key.", 'L', 7, "CCCCLBL", "\001\001\001\001\000\001\000", {"caPrivateKeyHex","caCN","subjectPublicKeyHex","subjectCN","daysValid","cert_out","cert_out_len"}},
-  {"dllExtractPublicKeyParams", (CAPL_FARCALL)ExtractPublicKeyParams, "RSA", "extract public key parameters from a C-style private key string", 'L', 5, {'C','B','L'-128,'B','L'-128}, "\001\001\000\001\000", {"privateKeyHex","modulusBytes","modulusLength","publicExponentBytes","publicExponentLength"}},
+  {"dllExtractPublicKeyParams", (CAPL_FARCALL)ExtractPublicKeyParams, "RSA", "extract public key parameters from a C-style RSA private or public key string", 'L', 5, {'C','B','L'-128,'B','L'-128}, "\001\001\000\001\000", {"keyHex","modulusBytes","modulusLength","publicExponentBytes","publicExponentLength"}},
   {0, 0}
 };
 CAPLEXPORT CAPL_DLL_INFO4* caplDllTable4 = table;

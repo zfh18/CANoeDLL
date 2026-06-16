@@ -52,20 +52,24 @@
 
 ### RSA 分类
 
-#### `dllRSASignMessagePSS(privateKeyHex, message, signature_out, signature_out_len)`
+#### `dllRSASignMessagePSS(privateKeyHex, message, signature_out, signature_out_capacity)`
 - 功能：对字符串做 RSA PSS 签名（SHA-256）
+- 说明：`signature_out_capacity` 是调用方提供的输出缓冲区容量
 - 返回：成功返回签名字节数，失败返回 `0`
 
-#### `dllRSASignMessagePKCS1(privateKeyHex, message, signature_out, signature_out_len)`
+#### `dllRSASignMessagePKCS1(privateKeyHex, message, signature_out, signature_out_capacity)`
 - 功能：对字符串做 RSA PKCS#1 v1.5 签名（SHA-256）
+- 说明：`signature_out_capacity` 是调用方提供的输出缓冲区容量
 - 返回：成功返回签名字节数，失败返回 `0`
 
-#### `dllRSASignByteArrayPSS(privateKeyHex, message, messageLen, signature_out, signature_out_len)`
+#### `dllRSASignByteArrayPSS(privateKeyHex, message, messageLen, signature_out, signature_out_capacity)`
 - 功能：对字节数组做 RSA PSS 签名（SHA-256）
+- 说明：`signature_out_capacity` 是调用方提供的输出缓冲区容量
 - 返回：成功返回签名字节数，失败返回 `0`
 
-#### `dllRSASignByteArrayPKCS1(privateKeyHex, message, messageLen, signature_out, signature_out_len)`
+#### `dllRSASignByteArrayPKCS1(privateKeyHex, message, messageLen, signature_out, signature_out_capacity)`
 - 功能：对字节数组做 RSA PKCS#1 v1.5 签名（SHA-256）
+- 说明：`signature_out_capacity` 是调用方提供的输出缓冲区容量
 - 返回：成功返回签名字节数，失败返回 `0`
 
 #### `dllGenerateX509Certificate(caPrivateKeyHex, caCN, subjectPrivateKeyHex, subjectCN, daysValid, cert_out, cert_out_len)`
@@ -76,10 +80,10 @@
 - 功能：生成 CA 签名 X.509 证书（DER，输入为被签发者公钥）
 - 返回：成功返回证书长度，失败返回 `0`
 
-#### `dllExtractPublicKeyParams(privateKeyHex, modulusBytes, modulusLength, publicExponentBytes, publicExponentLength)`
-- 功能：从 RSA 私钥提取公钥参数（n/e）
+#### `dllExtractPublicKeyParams(keyHex, modulusBytes, modulusLength, publicExponentBytes, publicExponentLength)`
+- 功能：从 RSA 私钥或公钥提取公钥参数（n/e）
 - 返回：成功返回 `1`，失败返回 `0`
-- 说明：`modulusLength`、`publicExponentLength` 为输入输出参数
+- 说明：`modulusLength`、`publicExponentLength` 返回实际输出长度
 
 ## parseflashfile.cpp
 
