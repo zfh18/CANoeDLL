@@ -31,6 +31,17 @@
 - 返回：成功返回 CRC8 值（`0~255`），失败返回 `-1`
 - 测试向量：输入 `3C 00 B0 00 03` 时输出 `0x32`
 
+#### `dllCRC8Custom(message, messageLen, poly, initValue, xorOut, refin, refout)`
+- 功能：按可配置参数计算 CRC8
+- 参数：
+  - `poly`：多项式（非反射形式，取值 `0x00~0xFF`）
+  - `initValue`：初值（取值 `0x00~0xFF`）
+  - `xorOut`：输出异或值（取值 `0x00~0xFF`）
+  - `refin`：输入是否反转（0/非0）
+  - `refout`：输出是否反转（0/非0）
+- 返回：成功返回 CRC8 值（`0~255`），失败返回 `-1`
+- 示例：使用 `poly=0x1D, initValue=0xFF, xorOut=0xFF, refin=0, refout=0` 时等价于 `dllCRC8J1850`
+
 #### `dllCRC32Custom(message, messageLen, poly, initValue, xorOut, refin, refout, crc_out, crc_out_len)`
 - 功能：按可配置参数计算 CRC32
 - 参数：

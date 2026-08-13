@@ -1,4 +1,4 @@
-# CANoeDLL 使用说明
+﻿# CANoeDLL 使用说明
 
 > 声明：本仓库中的全部代码由 AI 生成或在 AI 辅助下完成。
 
@@ -74,6 +74,7 @@
 - `dllHash256`：SHA-256 哈希
 - `dllCRC32`：CRC32 校验
 - `dllCRC8J1850`：CRC-8/SAE-J1850 校验
+- `dllCRC8Custom`：CRC8（可配置多项式/初始值/异或值/输入输出反转）
 - `dllCRC32Custom`：CRC32（可配置多项式/初始值/异或值/输入输出反转）
 - `dllCMACAES`：CMAC-AES（支持 128/192/256 位密钥）
 - `dllHMACSHA1`：HMAC-SHA1
@@ -119,4 +120,3 @@ x64 不使用 stdcall 修饰名，需要使用 `capldll_x64.def`。
 
 Build 只会使用当前 **Configure Preset**。  
 请先切换 **Configure Preset** 再 Build。
-

@@ -318,6 +318,87 @@ long CAPLEXPORT CAPLPASCAL CRC8J1850(
     return static_cast<long>(static_cast<uint8_t>(crc ^ 0xFF));
 }
 
+/**
+ * @brief 按位反转 8 位数值。
+ *
+ * @param value 待反转的 8 位数值。
+ * @return uint8_t 反转后的 8 位数值。
+ */
+static uint8_t Reflect8(uint8_t value) {
+    uint8_t result = 0;
+    for (int i = 0; i < 8; ++i) {
+        result = static_cast<uint8_t>((result << 1) | (value & 0x01u));
+        value = static_cast<uint8_t>(value >> 1);
+    }
+    return result;
+}
+
+/**
+ * @brief 根据可配置参数计算字节数组的 CRC8 值。
+ *
+ * poly 使用普通非反射形式传入；当 refin 非 0 时，函数内部会自动反转多项式。
+ *
+ * @param message 输入字节数组。
+ * @param messageLen 输入字节长度。
+ * @param poly CRC 多项式，取值 0x00 到 0xFF，使用普通形式。
+ * @param initValue 初始 CRC 值，取值 0x00 到 0xFF。
+ * @param xorOut 最终异或值，取值 0x00 到 0xFF。
+ * @param refin 非 0 表示按反射/低位优先方式处理输入。
+ * @param refout 非 0 表示返回反射后的输出值。
+ * @return long 成功返回 CRC8 值 0 到 255；输入无效时返回 -1。
+ */
+long CAPLEXPORT CAPLPASCAL CRC8Custom(
+    const CryptoPP::byte* message,
+    size_t messageLen,
+    uint32_t poly,
+    uint32_t initValue,
+    uint32_t xorOut,
+    uint32_t refin,
+    uint32_t refout) {
+    if (message == nullptr && messageLen > 0) {
+        return -1;
+    }
+    if (poly > 0xFFu || initValue > 0xFFu || xorOut > 0xFFu) {
+        return -1;
+    }
+
+    uint8_t crc = static_cast<uint8_t>(initValue);
+    const bool reflectIn = (refin != 0);
+    const bool reflectOut = (refout != 0);
+
+    if (reflectIn) {
+        const uint8_t polyRef = Reflect8(static_cast<uint8_t>(poly));
+        for (size_t i = 0; i < messageLen; ++i) {
+            crc = static_cast<uint8_t>(crc ^ message[i]);
+            for (int bit = 0; bit < 8; ++bit) {
+                if (crc & 0x01u) {
+                    crc = static_cast<uint8_t>((crc >> 1) ^ polyRef);
+                } else {
+                    crc = static_cast<uint8_t>(crc >> 1);
+                }
+            }
+        }
+    } else {
+        for (size_t i = 0; i < messageLen; ++i) {
+            crc = static_cast<uint8_t>(crc ^ message[i]);
+            for (int bit = 0; bit < 8; ++bit) {
+                if (crc & 0x80u) {
+                    crc = static_cast<uint8_t>((crc << 1) ^ poly);
+                } else {
+                    crc = static_cast<uint8_t>(crc << 1);
+                }
+            }
+        }
+    }
+
+    if (reflectOut != reflectIn) {
+        crc = Reflect8(crc);
+    }
+
+    crc = static_cast<uint8_t>(crc ^ xorOut);
+    return static_cast<long>(crc);
+}
+
 static uint32_t Reflect32(uint32_t value) {
     uint32_t result = 0;
     for (int i = 0; i < 32; ++i) {
@@ -815,6 +896,7 @@ CAPL_DLL_INFO4 table[] = {
   {"dllHash256", (CAPL_FARCALL)Hash256, "Algorithm", "Compute SHA-256 hash for a byte array.", 'L', 4, "BLBL", "\001\000\001\000", {"message","messageLen","hash_out","hash_out_len"}},
   {"dllCRC32", (CAPL_FARCALL)CRC32, "Algorithm", "Compute CRC32 for a byte array.", 'L', 4, "BLBL", "\001\000\001\000", {"message","messageLen","crc_out","crc_out_len"}},
   {"dllCRC8J1850", (CAPL_FARCALL)CRC8J1850, "Algorithm", "Compute CRC-8/SAE-J1850 for a byte array. Return CRC value directly, or -1 on failure.", 'L', 2, "BL", "\001\000", {"message","messageLen"}},
+  {"dllCRC8Custom", (CAPL_FARCALL)CRC8Custom, "Algorithm", "Compute configurable CRC8 for a byte array. Return CRC value directly, or -1 on failure.", 'L', 7, "BLLLLLL", "\001\000\000\000\000\000\000", {"message","messageLen","poly","initValue","xorOut","refin","refout"}},
   {"dllCRC32Custom", (CAPL_FARCALL)CRC32Custom, "Algorithm", "Compute configurable CRC32 for a byte array.", 'L', 9, "BLLLLLLBL", "\001\000\000\000\000\000\000\001\000", {"message","messageLen","poly","initValue","xorOut","refin","refout","crc_out","crc_out_len"}},
   {"dllCMACAES", (CAPL_FARCALL)CMACAES, "Algorithm", "Compute CMAC-AES (128/192/256) for a byte array.", 'L', 6, "BLBLBL", "\001\000\001\000\001\000", {"key","keyLen","message","messageLen","mac_out","mac_out_len"}},
   {"dllHMACSHA1", (CAPL_FARCALL)HMACSHA1, "Algorithm", "Compute HMAC-SHA1 for a byte array.", 'L', 6, "BLBLBL", "\001\000\001\000\001\000", {"key","keyLen","message","messageLen","mac_out","mac_out_len"}},
