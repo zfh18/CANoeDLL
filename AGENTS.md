@@ -30,6 +30,7 @@
 ## 构建验证
 
 - 涉及 DLL 导出、函数签名、编译选项或公共接口变更时，需要验证 32 位和 64 位构建。
+- GitHub Actions 使用 MSVC 开发者环境加 Ninja preset 构建，避免 CI 依赖固定 Visual Studio generator 版本；本机 `x86`/`x64` preset 可继续用于 VS 2022 方案。
 - 本项目可使用 Visual Studio DevCmd 加 VS bundled CMake/Ninja 做干净验证构建。
 - 已知工具路径：
   - VS DevCmd: `D:\DevTools\VisualStudio\Community2022\Common7\Tools\VsDevCmd.bat`

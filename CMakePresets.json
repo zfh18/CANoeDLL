@@ -20,6 +20,24 @@
       "cacheVariables": {
         "CMAKE_CONFIGURATION_TYPES": "Release"
       }
+    },
+    {
+      "name": "x86-ninja",
+      "displayName": "x86 (MSVC Ninja)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/x86-ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "x64-ninja",
+      "displayName": "x64 (MSVC Ninja)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/x64-ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
     }
   ],
   "buildPresets": [
@@ -34,6 +52,16 @@
       "displayName": "Release | x64",
       "configurePreset": "x64",
       "configuration": "Release"
+    },
+    {
+      "name": "x86-ninja-release",
+      "displayName": "Release | x86 (MSVC Ninja)",
+      "configurePreset": "x86-ninja"
+    },
+    {
+      "name": "x64-ninja-release",
+      "displayName": "Release | x64 (MSVC Ninja)",
+      "configurePreset": "x64-ninja"
     }
   ]
 }

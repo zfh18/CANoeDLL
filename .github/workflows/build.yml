@@ -49,13 +49,19 @@ jobs:
             Write-Host "ExtLib/cryptlib32.lib missing, skip x86 build."
           }
 
+      - name: Setup MSVC (x86)
+        if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+
       - name: Configure (x86)
         if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
-        run: cmake --preset x86
+        run: cmake --preset x86-ninja
 
       - name: Build (x86)
         if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
-        run: cmake --build --preset x86-release --target ${{ matrix.target }}
+        run: cmake --build --preset x86-ninja-release --target ${{ matrix.target }}
 
       - name: Upload artifacts (x86)
         if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
@@ -63,8 +69,8 @@ jobs:
         with:
           name: x86-${{ matrix.target }}
           path: |
-            build/x86/bin/Release/*.dll
-            build/x86/bin/Release/*.map
+            build/x86-ninja/bin/*.dll
+            build/x86-ninja/bin/*.map
 
   build-x64:
     if: ${{ inputs.arch == 'all' || inputs.arch == 'x64' }}
@@ -87,13 +93,19 @@ jobs:
             Write-Host "ExtLib/cryptlib64.lib missing, skip x64 build."
           }
 
+      - name: Setup MSVC (x64)
+        if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Configure (x64)
         if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
-        run: cmake --preset x64
+        run: cmake --preset x64-ninja
 
       - name: Build (x64)
         if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
-        run: cmake --build --preset x64-release --target ${{ matrix.target }}
+        run: cmake --build --preset x64-ninja-release --target ${{ matrix.target }}
 
       - name: Upload artifacts (x64)
         if: env.CRYPTLIB_PRESENT == 'true' && (inputs.target == 'all' || inputs.target == matrix.target)
@@ -101,5 +113,5 @@ jobs:
         with:
           name: x64-${{ matrix.target }}
           path: |
-            build/x64/bin/Release/*.dll
-            build/x64/bin/Release/*.map
+            build/x64-ninja/bin/*.dll
+            build/x64-ninja/bin/*.map

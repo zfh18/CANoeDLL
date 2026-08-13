@@ -44,13 +44,19 @@ jobs:
             Write-Host "$libPath missing, skip build."
           }
 
+      - name: Setup MSVC
+        if: env.CRYPTLIB_PRESENT == 'true'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+
       - name: Configure
         if: env.CRYPTLIB_PRESENT == 'true'
-        run: cmake --preset ${{ matrix.arch }}
+        run: cmake --preset ${{ matrix.arch }}-ninja
 
       - name: Build all targets
         if: env.CRYPTLIB_PRESENT == 'true'
-        run: cmake --build --preset ${{ matrix.arch }}-release --target cryptodll parseflashfile securityalgo seednkey_sls
+        run: cmake --build --preset ${{ matrix.arch }}-ninja-release --target cryptodll parseflashfile securityalgo seednkey_sls
 
       - name: Upload build artifacts
         if: env.CRYPTLIB_PRESENT == 'true'
@@ -58,8 +64,8 @@ jobs:
         with:
           name: ${{ matrix.arch }}-release-assets
           path: |
-            build/${{ matrix.arch }}/bin/Release/*.dll
-            build/${{ matrix.arch }}/bin/Release/*.map
+            build/${{ matrix.arch }}-ninja/bin/*.dll
+            build/${{ matrix.arch }}-ninja/bin/*.map
 
   publish-release:
     needs: build
